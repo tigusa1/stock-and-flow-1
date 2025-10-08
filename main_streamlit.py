@@ -14,7 +14,7 @@ def run_streamlit():
         with st.expander("Basic Settings", expanded=True):
             avg_salary = st.slider("Average Faculty Salary", 50, 200, 120, step=5)
             cash_init = st.slider("Initial Cash Balance", 0, 500, 00, step=10)
-            n_projects = st.slider("Number of Projects", 1000, 2000, 1500)
+            n_projects = st.slider("Number of Projects", 2, 2000, 1500)
             max_award = st.slider("Max Award Amount", 100, 2000, 1000, step=50)
 
     with col2:
