@@ -2,12 +2,19 @@ import random
 from stocks_new import Personnel, Project, CashStock
 
 def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, idc_rate,
-                   del_T_p_non_reimb=(-1,0.), del_T_p_idc_rate=(-1,0.), T=52):
+                   del_T_p_non_reimb=(-1,0.), del_T_p_idc_rate=(-1,0.), T=52, reimbursement_duration=2,
+                   p_delayed_NOA=0):
     # --- Setup ---
     projects = []
     for i in range(n_projects):
         is_non_reimbursable = random.random() < p_non_reimb
-        reimbursement_duration = -1 if is_non_reimbursable else random.choice([2, 3])
+        if is_non_reimbursable:
+            reimbursement_duration = -1 # overwrite
+        else:
+            if random.random() < p_delayed_NOA:
+                proj_reimbursement_duration = random.randint(reimbursement_duration,52)
+            else:
+                proj_reimbursement_duration = reimbursement_duration
         duration = random.randint(51, 52) if reimbursement_duration > 0 else 52  # avoid very short projects
         start = random.randint(-51, 50)  # project can start before simulation
         end = start + duration
@@ -17,7 +24,7 @@ def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, id
         proj = Project(
             f"Project {i+1}", start, end,
             award_amount = random.randint(int(0.75 * max_award), max_award),
-            reimbursement_duration = reimbursement_duration
+            reimbursement_duration = proj_reimbursement_duration
         )
         projects.append(proj)
 
@@ -95,8 +102,12 @@ def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, id
             p.receivable_amount for p in projects if p.reimbursement_duration == -1
         ))
         # inst_paid_total = faculty.institution_paid()
-        cash.value -= faculty_inst_pay
-        inst_paid_log.append(faculty_inst_pay)
+        if t>0:
+            cash.value -= faculty_inst_pay
+            inst_paid_log.append(faculty_inst_pay)
+        else:
+            inst_paid_log.append(0)
+
         cash_history.append(cash.value)
 
     avg_reimb_per_project = [round(sum(r) / T) for r in reimbursement_by_project]
