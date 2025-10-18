@@ -2,7 +2,7 @@ import random
 from stocks_new import Personnel, Project, CashStock
 
 def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, idc_rate,
-                   del_T_p_non_reimb=(-1,0.), del_T_p_idc_rate=(-1,0.), T=52, reimbursement_duration=2,
+                   del_T_p_non_reimb=(-1,0.), del_T_p_idc_rate=(-1,0.), T=152, reimbursement_duration=2,
                    p_delayed_NOA=0):
     # --- Setup ---
     projects = []
