@@ -105,7 +105,7 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     # ------------------------------------------------------------
     # --- Static final stacked area (bottom panel) ---
     ax4.set_xlim(0, n_months)
-    ax4.set_ylim(0, np.max(burns.sum(axis=0)) * 1.2)
+    ax4.set_ylim(0, np.max(burns_BL.sum(axis=0)) * 1.05)
     ax4.set_xlabel("Month")
     ax4.set_ylabel("Final Spending ($M/month)")
     ax4.set_title("Final Stacked Area (End of Period)")
