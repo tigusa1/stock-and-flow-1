@@ -111,9 +111,13 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     ax4.set_title("Final Stacked Area (End of Period)")
     ax3.set_title("Past & Projected Stacked Area")
 
-    active_idx_final = np.argsort(start_idx)
-    final_colors = [colors[i] for i in active_idx_final]
-    ax4.stackplot(t, *burns[active_idx_final], alpha=0.7, colors=final_colors)
+    # active_idx_final = np.argsort(start_idx)
+    # final_colors = [colors[i] for i in active_idx_final]
+
+    # Fixed order of projects (earliest start first)
+    final_order = np.argsort(start_idx)
+    final_colors = [colors[i] for i in final_order]
+    ax4.stackplot(t, *burns[final_order], alpha=0.7, colors=final_colors)
 
     # Final total dotted curve
     total_final = burns.sum(axis=0)
@@ -168,10 +172,17 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
 
         active_mask_now = start_idx <= m
         if np.any(active_mask_now):
-            active_idx = np.where(active_mask_now)[0]
-            active_idx = active_idx[np.argsort(start_idx[active_idx])]
+            # Indices of active projects in the fixed final order
+            active_idx = [i for i in final_order if active_mask_now[i]]
             active_burns = burns[active_idx]
-            active_colors = [colors[i] for i in active_idx]
+            active_colors = [final_colors[final_order.tolist().index(i)] for i in active_idx]
+
+            # active_idx = np.where(active_mask_now)[0]
+            # active_idx = active_idx[np.argsort(start_idx[active_idx])]
+            # active_burns = burns[active_idx]
+            # # active_colors = [colors[i] for i in active_idx] # flickering
+            # # active_colors = [final_colors[active_idx_final.tolist().index(i)] for i in active_idx]
+            # active_colors = final_colors[:len(active_idx)]
 
             ax3.stackplot(t, *active_burns, alpha=0.7, colors=active_colors)
 

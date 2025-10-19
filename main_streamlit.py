@@ -167,14 +167,14 @@ def run_streamlit():
             gif_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month) # DEBUG
         else:
             # ANIMATION
-            if st.button("Generate Animation"):
-                with st.spinner("Creating animation... please wait ⏳"):
-                    gif_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month)
-                st.success("Animation complete!")
-                # fig, ax = plt.subplots()
-                # st.pyplot(fig)
+            # if st.button("Generate Animation"):
+            with st.spinner("Creating animation... please wait ⏳"):
+                gif_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month)
+            # st.success("Animation complete!")
+            # fig, ax = plt.subplots()
+            # st.pyplot(fig)
 
-                st.image(gif_path, caption="Gantt + Animated Stacked Area", width="stretch")
+            st.image(gif_path, caption="Gantt + Animated Stacked Area", width="stretch")
 
     # st.session_state.del_T_p_non_reimb = del_T_p_non_reimb
 
