@@ -5,7 +5,8 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 import matplotlib as mpl
 
 
-def make_project_activity_animation(t, burns, n_months, save_as="activity_animation.gif"):
+def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
+            save_as="activity_animation.gif", animate=True):
     """
     Two-panel animation:
       1. Gantt chart with horizontal color-intensity variation by burn rate
@@ -17,6 +18,7 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
     # ------------------------------------------------------------
     t = np.asarray(t)
     burns = np.atleast_2d(burns)
+    print(f"burns: {burns}")
     if burns.shape[1] != len(t):
         n_months = burns.shape[1]
         t = np.arange(n_months)
@@ -41,7 +43,7 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
     # ------------------------------------------------------------
     fig, (ax2, ax3, ax4) = plt.subplots(
         3, 1, figsize=(9, 10),
-        gridspec_kw={"height_ratios": [1, 2, 2]},
+        gridspec_kw={"height_ratios": [2, 3, 3]},
         constrained_layout=True,
     )
 
@@ -83,10 +85,11 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
     vline2 = ax2.axvline(0, color="black", linestyle=":", lw=1.5)
 
     # optional colorbar showing relative intensity scale (0–1)
-    sm = plt.cm.ScalarMappable(cmap="YlOrRd", norm=plt.Normalize(vmin=0, vmax=1))
-    fig.colorbar(sm, ax=ax2, fraction=0.02, pad=0.02, label="Relative burn intensity")
+    # sm = plt.cm.ScalarMappable(cmap="YlOrRd", norm=plt.Normalize(vmin=0, vmax=1))
+    # fig.colorbar(sm, ax=ax2, fraction=0.02, pad=0.02, label="Relative burn intensity")
 
     ax2.invert_yaxis()
+
     # ------------------------------------------------------------
     # STACKED-AREA PANEL
     # ------------------------------------------------------------
@@ -95,6 +98,7 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
     ax3.set_xlabel("Month")
     ax3.set_ylabel("Active Project Spending ($M/month)")
     vline3 = ax3.axvline(0, color="black", linestyle=":", lw=1.5)
+    vlineD = ax3.axvline(decline_month, color="red", ls=":", label="Decline starts")
 
     # ------------------------------------------------------------
     # Static bottom panel (final stacked-area snapshot)
@@ -105,6 +109,7 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
     ax4.set_xlabel("Month")
     ax4.set_ylabel("Final Spending ($M/month)")
     ax4.set_title("Final Stacked Area (End of Period)")
+    ax3.set_title("Past & Projected Stacked Area")
 
     active_idx_final = np.argsort(start_idx)
     final_colors = [colors[i] for i in active_idx_final]
@@ -112,8 +117,12 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
 
     # Final total dotted curve
     total_final = burns.sum(axis=0)
+    total_BL_final = burns_BL.sum(axis=0)
     final_curve, = ax4.plot(
-        t, total_final, linestyle=":", lw=3, color="black", alpha=0.9
+        t, total_final, linestyle=":", lw=3, color="red", alpha=0.9
+    )
+    final_BL_curve, = ax4.plot(
+        t, total_BL_final, linestyle=":", lw=3, color="black", alpha=0.9
     )
 
     # --- Animated stacked area (middle panel) ---
@@ -126,8 +135,15 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
 
     # add an empty dotted line that will always mirror the final total (same shape as ax4)
     ax3_dotted, = ax3.plot(
-        t, total_final, linestyle=":", lw=3, color="black", alpha=0.5
+        t, total_final, linestyle=":", lw=3, color="red", alpha=0.5,
+        label='total award'
     )
+    ax3_BL_dotted, = ax3.plot(
+        t, total_BL_final, linestyle=":", lw=3, color="black", alpha=0.5,
+        label='total award without declines'
+    )
+    ax3.legend(fontsize=8, loc="upper right")
+    ax4.legend(fontsize=8, loc="upper right")
 
     # ------------------------------------------------------------
     # Update function
@@ -146,7 +162,8 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
                 art.remove()
             except Exception:
                 pass
-        for line in [l for l in ax3.lines if l not in [vline3, ax3_dotted]]:
+        for line in [l for l in ax3.lines if l not in [vline3, ax3_dotted,
+                ax3_BL_dotted, vlineD]]:
             line.remove()
 
         active_mask_now = start_idx <= m
@@ -179,16 +196,31 @@ def make_project_activity_animation(t, burns, n_months, save_as="activity_animat
     update(0)
     fig.canvas.draw()
 
-    try:
-        writer = PillowWriter(fps=5)
-        ani.save(save_as, writer=writer)
-        print(f"✅ Animation saved → {save_as}")
-    except Exception as e:
-        print(f"⚠️ Animation writer failed ({type(e).__name__}: {e}); saving static fallback.")
-        fallback = save_as.replace(".gif", "_fallback.png")
-        fig.savefig(fallback)
-        save_as = fallback
-    finally:
+    if animate:
+        try:
+            import sys # DEBUG
+            if sys.gettrace() is not None:
+                save_as = []
+            else:
+                writer = PillowWriter(fps=5)
+                fig.delaxes(ax4)
+                ani.save(save_as, writer=writer)
+                print(f"✅ Animation saved → {save_as}")
+        except Exception as e:
+            print(f"⚠️ Animation writer failed ({type(e).__name__}: {e}); saving static fallback.")
+            fallback = save_as.replace(".gif", "_fallback.png")
+            fig.savefig(fallback)
+            save_as = fallback
+        finally:
+            plt.close(fig)
+    else:
+        fig.delaxes(ax2)
+        fig.delaxes(ax3)
+        fig.subplots_adjust(hspace=0.3)  # tighten spacing after removing
+
+        static_path = save_as.replace(".gif", "_static.png")
+        fig.savefig(static_path, bbox_inches="tight")
         plt.close(fig)
+        save_as = static_path
 
     return save_as
