@@ -187,9 +187,9 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
 
             ax3.stackplot(t, *active_burns, alpha=0.7+0.3, colors=active_colors)
 
-            # ✅ Rasterize all filled polygons for this frame
-            for art in ax3.collections:
-                art.set_rasterized(True)
+            # # ✅ Rasterize all filled polygons for this frame SLOW IN CLOUD!
+            # for art in ax3.collections:
+            #     art.set_rasterized(True)
 
             # --- solid top line for current total ---
             total_active = active_burns.sum(axis=0)
