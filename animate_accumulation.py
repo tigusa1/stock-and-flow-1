@@ -18,7 +18,7 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     # ------------------------------------------------------------
     t = np.asarray(t)
     burns = np.atleast_2d(burns)
-    print(f"burns: {burns}")
+    # print(f"burns: {burns}")
     if burns.shape[1] != len(t):
         n_months = burns.shape[1]
         t = np.arange(n_months)

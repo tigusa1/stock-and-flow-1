@@ -49,7 +49,7 @@ def generate_projects(t, n_grants_baseline, decline_month, decline_factor,
         grants_BL.append(burn_curve(t, start, 40, peak_BL, shape))  # DEBUG
         start_peaks.append([start,peak])  # DEBUG
 
-    print(f"start_peaks={start_peaks}")
+    # print(f"start_peaks={start_peaks}")
     # --- after decline projects ---
     # for _ in range(n_after):
     #     # valid starts in [decline_month, n_months-1]; use safe randint
