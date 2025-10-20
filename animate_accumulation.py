@@ -204,6 +204,7 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     # Animate & save
     # ------------------------------------------------------------
     ani = FuncAnimation(fig, update, frames=n_months, interval=200, blit=False)
+    # ani = FuncAnimation(fig, update, frames=t[::2], interval=200, blit=False) # NOT MUCH DIFFERENCE
     update(0)
     fig.canvas.draw()
 
@@ -213,9 +214,10 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
             if sys.gettrace() is not None:
                 save_as = []
             else:
-                writer = PillowWriter(fps=5)
                 fig.delaxes(ax4)
-                ani.save(save_as, writer=writer)
+                # writer = PillowWriter(fps=5)
+                # ani.save(save_as, writer=writer)
+                ani.save(save_as, writer='ffmpeg')
                 print(f"✅ Animation saved → {save_as}")
         except Exception as e:
             print(f"⚠️ Animation writer failed ({type(e).__name__}: {e}); saving static fallback.")
