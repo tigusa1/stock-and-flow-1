@@ -119,16 +119,16 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     # Fixed order of projects (earliest start first)
     final_order = np.argsort(start_idx)
     final_colors = [colors[i] for i in final_order]
-    ax4.stackplot(t, *burns[final_order], alpha=0.7, colors=final_colors)
+    ax4.stackplot(t, *burns[final_order], alpha=0.7+0.3, colors=final_colors)
 
     # Final total dotted curve
     total_final = burns.sum(axis=0)
     total_BL_final = burns_BL.sum(axis=0)
     final_curve, = ax4.plot(
-        t, total_final, linestyle=":", lw=3, color="red", alpha=0.9
+        t, total_final, linestyle=":", lw=3, color="red", alpha=0.9+0.1
     )
     final_BL_curve, = ax4.plot(
-        t, total_BL_final, linestyle=":", lw=3, color="black", alpha=0.9
+        t, total_BL_final, linestyle=":", lw=3, color="black", alpha=0.9+0.1
     )
 
     # --- Animated stacked area (middle panel) ---
@@ -140,8 +140,8 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     vline3 = ax3.axvline(0, color="black", linestyle=":", lw=1.5)
 
     # add an empty dotted line that will always mirror the final total (same shape as ax4)
-    total_style    = dict(linestyle=":", lw=3, color="red",   alpha=0.5, label="total award")
-    total_BL_style = dict(linestyle=":", lw=3, color="black", alpha=0.5,
+    total_style    = dict(linestyle=":", lw=3, color="red",   alpha=0.5+0.5, label="total award")
+    total_BL_style = dict(linestyle=":", lw=3, color="black", alpha=0.5+0.5,
                           label="total award without declines")
     ax3_dotted, = ax3.plot(t, total_final, **total_style)
     ax4.plot(              t, total_final, **total_style)
@@ -185,13 +185,13 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
             # # active_colors = [final_colors[active_idx_final.tolist().index(i)] for i in active_idx]
             # active_colors = final_colors[:len(active_idx)]
 
-            ax3.stackplot(t, *active_burns, alpha=0.7, colors=active_colors)
+            ax3.stackplot(t, *active_burns, alpha=0.7+0.3, colors=active_colors)
 
             # --- solid top line for current total ---
             total_active = active_burns.sum(axis=0)
             ax3.plot(
                 t, total_active,
-                linestyle="-", lw=3, color="black", alpha=0.9
+                linestyle="-", lw=3, color="black", alpha=0.9+0.1
             )
 
         # keep dotted reference (ax3_dotted) as the final total
