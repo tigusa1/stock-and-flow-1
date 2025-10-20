@@ -99,6 +99,8 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     ax3.set_ylabel("Active Project Spending ($M/month)")
     vline3 = ax3.axvline(0, color="black", linestyle=":", lw=1.5)
     vlineD = ax3.axvline(decline_month, color="red", ls=":", label="Decline starts")
+    ax4.axvline(decline_month, color="red", ls=":", label="Decline starts")
+    ax2.axvline(decline_month, color="red", ls=":", label="Decline starts")
 
     # ------------------------------------------------------------
     # Static bottom panel (final stacked-area snapshot)
@@ -138,15 +140,14 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     vline3 = ax3.axvline(0, color="black", linestyle=":", lw=1.5)
 
     # add an empty dotted line that will always mirror the final total (same shape as ax4)
-    ax3_dotted, = ax3.plot(
-        t, total_final, linestyle=":", lw=3, color="red", alpha=0.5,
-        label='total award'
-    )
-    ax3_BL_dotted, = ax3.plot(
-        t, total_BL_final, linestyle=":", lw=3, color="black", alpha=0.5,
-        label='total award without declines'
-    )
-    ax3.legend(fontsize=8, loc="upper right")
+    total_style    = dict(linestyle=":", lw=3, color="red",   alpha=0.5, label="total award")
+    total_BL_style = dict(linestyle=":", lw=3, color="black", alpha=0.5,
+                          label="total award without declines")
+    ax3_dotted, = ax3.plot(t, total_final, **total_style)
+    ax4.plot(              t, total_final, **total_style)
+    ax3_BL_dotted, = ax3.plot(t, total_BL_final, **total_BL_style)
+    ax4.plot(                 t, total_BL_final, **total_BL_style)
+    # ax3.legend(fontsize=8, loc="upper right")
     ax4.legend(fontsize=8, loc="upper right")
 
     # ------------------------------------------------------------
