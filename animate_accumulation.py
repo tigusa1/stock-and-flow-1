@@ -234,7 +234,7 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     else:
         fig.delaxes(ax2)
         fig.delaxes(ax3)
-        fig.subplots_adjust(hspace=0.3)  # tighten spacing after removing
+        # fig.subplots_adjust(hspace=0.3)  # tighten spacing after removing
 
         static_path = save_as.replace(".gif", "_static.png")
         fig.savefig(static_path, bbox_inches="tight")
