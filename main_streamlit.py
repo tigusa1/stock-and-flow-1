@@ -45,7 +45,7 @@ def run_streamlit():
                 n_projects = st.slider("Number of Projects", 2, 2000, 1500)
                 max_award = st.slider("Max Award Amount", 100, 2000, 1000, step=50)
     else:
-        col2, col3 = st.columns([2, 3])  # adjust width ratio if needed
+        col_spacer1, col2, col_spacer2, col3, col_spacer3 = st.columns([0.2, 2, 0.5, 3, 0.2])
 
     with col2:
         # Try to save the state, but slider change immediately causes rerun so del_T1_non_reimb is not saved
