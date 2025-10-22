@@ -170,7 +170,7 @@ def run_streamlit():
         png_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
                                                    animate=False)  # DEBUG
 
-        st.image(png_path, caption="Static Stacked Area", width="stretch")
+        st.image(png_path, width="stretch")
 
         if is_debugging():
             print("DEBUG MODE")
@@ -184,7 +184,7 @@ def run_streamlit():
             # fig, ax = plt.subplots()
             # st.pyplot(fig)
 
-            st.image(gif_path, caption="Gantt + Animated Stacked Area", width="stretch")
+            st.image(gif_path, width="stretch")
 
     # st.session_state.del_T_p_non_reimb = del_T_p_non_reimb
 
