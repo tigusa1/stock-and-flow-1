@@ -14,6 +14,8 @@ def is_debugging():
     """Checks if the current Python process is being debugged."""
     return hasattr(sys, 'gettrace') and sys.gettrace() is not None
 
+flag_show_SD = False
+
 # --- STREAMLIT ENTRY POINT ---
 def run_streamlit():
     st.set_page_config(
@@ -33,14 +35,17 @@ def run_streamlit():
     </style>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1, 2])  # adjust width ratio if needed
-    with col1:
-        with st.expander("Basic Settings", expanded=False):
-            reimbursement_duration = st.slider("Reimbursement duration", 1, 10, 2)
-            avg_salary = st.slider("Average Faculty Salary", 50, 200, 120, step=5)
-            cash_init = st.slider("Initial Cash Balance", 0, 500, 00, step=10)
-            n_projects = st.slider("Number of Projects", 2, 2000, 1500)
-            max_award = st.slider("Max Award Amount", 100, 2000, 1000, step=50)
+    if flag_show_SD:
+        col1, col2, col3 = st.columns([1, 1, 2])  # adjust width ratio if needed
+        with col1:
+            with st.expander("Basic Settings", expanded=False):
+                reimbursement_duration = st.slider("Reimbursement duration", 1, 10, 2)
+                avg_salary = st.slider("Average Faculty Salary", 50, 200, 120, step=5)
+                cash_init = st.slider("Initial Cash Balance", 0, 500, 00, step=10)
+                n_projects = st.slider("Number of Projects", 2, 2000, 1500)
+                max_award = st.slider("Max Award Amount", 100, 2000, 1000, step=50)
+    else:
+        col2, col3 = st.columns([2, 3])  # adjust width ratio if needed
 
     with col2:
         # Try to save the state, but slider change immediately causes rerun so del_T1_non_reimb is not saved
@@ -52,42 +57,47 @@ def run_streamlit():
             if key not in st.session_state:
                 st.session_state[key] = default
 
-        with st.expander("Project Overlap", expanded=True):
-            st.markdown("#### Project Parameters")  # renders like st.subheader
-            n_grants = st.slider("Number of grants", 10, 300, 40, 10)
-            decline_month = st.slider("Month new grant award amount declines", 0, 60, 30, 10)
-            decline_factor = st.slider("Decline as percentage of original award (%)", 10, 100, 50, 5) / 100
-            n_months = st.slider("Simulation months", 36, 84, 72, 12)
-            # show_gantt = st.checkbox("Show Gantt Chart", True)
-            # seed = st.number_input("Random seed", 0, 9999, 3)
-            seed = 3
-            burn_shape = st.selectbox("Burn curve shape", ["bell", "constant", "early", "late"], 1)
+        # with st.expander("Award information", expanded=True):
+        st.markdown("#### Award information")  # renders like st.subheader
+        n_grants = st.slider("Number of grants", 10, 300, 40, 10)
+        decline_month = st.slider("Month new grant award amount declines", 0, 60, 30, 10,
+                                  help="After this month, all award amounts are reduced.")
+        decline_factor = st.slider("Decline as percentage of original award (%)",
+                                10, 100, 50, 5,
+                                help="Amount that each award is reduced.") / 100
+        n_months = st.slider("Simulation months", 36, 84, 72, 12,
+                                help="Number of months to simulate.")
+        # show_gantt = st.checkbox("Show Gantt Chart", True)
+        # seed = st.number_input("Random seed", 0, 9999, 3)
+        seed = 3
+        burn_shape = st.selectbox("Burn curve shape", ["bell", "constant", "early", "late"], 1,
+                                help="Shape of burn rate for every award.")
 
-        with st.expander("Non-reimbursable projects", expanded=False):
-            p_non_reimb = st.slider("Probability of Non-reimbursable Project", 0.0, 1.0, 0.00)
-            p_delayed_NOA = st.slider("Probability of Delayed NOA", 0.0, 1.0, 0.00)
-            # show_del_non_reimb = st.toggle("Change non-reimbursable rate mid-year")
-            # if show_del_non_reimb:
-            del_T1_non_reimb = st.slider("Time of change in non reimbursable projects", 0, 50,
-                                      st.session_state.del_T_p_non_reimb[0])
-            del_p_non_reimb = st.slider("Increase in probability of non reimbursable", 0.0, 1.0,
-                                      st.session_state.del_T_p_non_reimb[1])
-            del_T_p_non_reimb = (del_T1_non_reimb, del_p_non_reimb)
-            # else:
-            #     del_T_p_non_reimb = st.session_state.del_T_p_non_reimb
+        if flag_show_SD:
+            with st.expander("Non-reimbursable projects", expanded=False):
+                p_non_reimb = st.slider("Probability of Non-reimbursable Project", 0.0, 1.0, 0.00)
+                p_delayed_NOA = st.slider("Probability of Delayed NOA", 0.0, 1.0, 0.00)
+                # show_del_non_reimb = st.toggle("Change non-reimbursable rate mid-year")
+                # if show_del_non_reimb:
+                del_T1_non_reimb = st.slider("Time of change in non reimbursable projects", 0, 50,
+                                          st.session_state.del_T_p_non_reimb[0])
+                del_p_non_reimb = st.slider("Increase in probability of non reimbursable", 0.0, 1.0,
+                                          st.session_state.del_T_p_non_reimb[1])
+                del_T_p_non_reimb = (del_T1_non_reimb, del_p_non_reimb)
+                # else:
+                #     del_T_p_non_reimb = st.session_state.del_T_p_non_reimb
 
-        with st.expander("IDC", expanded=False):
-            idc_rate = st.slider("Indirect Cost Rate (%)", 0.0, 1.0, 0.55)
-            # show_del_idc_rate = st.toggle("Decrease idc rate mid-year")
-            # if show_del_idc_rate:
-            del_T1_idc_rate = st.slider("Time of decrease in idc rate", 0, 50, 0)
-            del_p_idc_rate = st.slider("Decrease in idc rate", 0.0, 1.0, 0.0)
-            del_T_p_idc_rate = (del_T1_idc_rate, del_p_idc_rate)
-            # else:
-            #     del_T_p_idc_rate = (-1, 0.)
+            with st.expander("IDC", expanded=False):
+                idc_rate = st.slider("Indirect Cost Rate (%)", 0.0, 1.0, 0.55)
+                # show_del_idc_rate = st.toggle("Decrease idc rate mid-year")
+                # if show_del_idc_rate:
+                del_T1_idc_rate = st.slider("Time of decrease in idc rate", 0, 50, 0)
+                del_p_idc_rate = st.slider("Decrease in idc rate", 0.0, 1.0, 0.0)
+                del_T_p_idc_rate = (del_T1_idc_rate, del_p_idc_rate)
+                # else:
+                #     del_T_p_idc_rate = (-1, 0.)
 
     with col3:
-        flag_show_SD = False
         if flag_show_SD:
             (cash_history, non_reimb1, non_reimb2, idc_log, inst_paid_log, total_avg_reimbursement,
              total_spend_reimbursable, total_spend_non_reimbursable) = run_simulation(

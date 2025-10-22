@@ -41,9 +41,9 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     # ------------------------------------------------------------
     # Build figure
     # ------------------------------------------------------------
-    fig, (ax2, ax3, ax4) = plt.subplots(
+    fig, (ax3, ax2, ax4) = plt.subplots(
         3, 1, figsize=(9, 10),
-        gridspec_kw={"height_ratios": [2, 3, 3]},
+        gridspec_kw={"height_ratios": [3, 2, 3]},
         constrained_layout=True,
     )
 
@@ -109,9 +109,9 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     ax4.set_xlim(0, n_months)
     ax4.set_ylim(0, np.max(burns_BL.sum(axis=0)) * 1.05)
     ax4.set_xlabel("Month")
-    ax4.set_ylabel("Final Spending ($M/month)")
-    ax4.set_title("Final Stacked Area (End of Period)")
-    ax3.set_title("Past & Projected Stacked Area")
+    ax4.set_ylabel("Spending per month ($M)")
+    ax4.set_title("Total spending of all awards")
+    ax3.set_title("Spending of active and past awards")
 
     # active_idx_final = np.argsort(start_idx)
     # final_colors = [colors[i] for i in active_idx_final]
@@ -136,7 +136,7 @@ def make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
     # use the same y-axis limits as ax4
     ax3.set_ylim(ax4.get_ylim())
     ax3.set_xlabel("Month")
-    ax3.set_ylabel("Active Project Spending ($M/month)")
+    ax3.set_ylabel("Spending per month ($M)")
     vline3 = ax3.axvline(0, color="black", linestyle=":", lw=1.5)
 
     # add an empty dotted line that will always mirror the final total (same shape as ax4)
