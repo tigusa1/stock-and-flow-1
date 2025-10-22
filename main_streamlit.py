@@ -59,7 +59,7 @@ def run_streamlit():
 
         # with st.expander("Award information", expanded=True):
         st.markdown("#### Award information")  # renders like st.subheader
-        n_grants = st.slider("Number of grants", 10, 300, 40, 10)
+        n_grants = st.slider("Number of grants", 10, 100, 30, 10)
         decline_month = st.slider("Month new grant award amount declines", 0, 60, 30, 10,
                                   help="After this month, all award amounts are reduced.")
         decline_factor = st.slider("Decline as percentage of original award (%)",
