@@ -59,14 +59,36 @@ def run_streamlit():
 
         # with st.expander("Award information", expanded=True):
         st.markdown("#### Award information")  # renders like st.subheader
-        n_grants = st.slider("Number of grants", 10, 100, 30, 10)
-        decline_month = st.slider("Month new grant award amount declines", 0, 60, 30, 10,
+
+        with st.expander("ℹ️ Summary of simulation procedure"):
+            st.markdown("""
+            A series of projects are simulated as follows:
+            - The **total number** of projects is set by the *1st slider*. 
+            - **Durations** are uniformly distributed from 12 to 36 months.
+            - The average **burn rate** is $100,000 per month.
+            - **Burn rate shapes** are set by the *dropdown menu* below.
+            - The **simulation display** begins at time 0 (months), occurring after some of the projects
+              have started. The simulation **end time** is set by the *4th slider* below.
+            - Project **start times** are uniformly distributed starting 36 months prior to
+              time 0 until the simulation end time.
+            
+            A decrease in award amounts is simulated as follows:
+            - The *2nd slider* below sets the **month at which all awards with subsequent start times** have
+              reduced award amounts.
+            - The **reduced award amount**, specified as a percent of the original award amount,
+              is specified by the *3rd slider* below.
+            """)
+
+        n_grants = st.slider("Number of awards", 10, 100, 30, 10,
+                             help="Start times are uniformly distributed starting 36 months prior to " +
+                                  "time 0 that is displayed on the charts.")
+        decline_month = st.slider("Month new awards experience reduced burn rate", 0, 60, 30, 10,
                                   help="After this month, all award amounts are reduced.")
         decline_factor = st.slider("Decline as percentage of original award (%)",
                                 10, 100, 50, 5,
                                 help="Amount that each award is reduced.") / 100
-        n_months = st.slider("Simulation months", 36, 84, 72, 12,
-                                help="Number of months to simulate.")
+        n_months = st.slider("Simulation duration (months)", 36, 84, 72, 12,
+                                help=".")
         # show_gantt = st.checkbox("Show Gantt Chart", True)
         # seed = st.number_input("Random seed", 0, 9999, 3)
         seed = 3

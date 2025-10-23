@@ -4,16 +4,16 @@ import numpy as np
 def burn_curve(t, start, dur, peak, shape="bell"):
     x = np.clip((t - start) / dur, 0, 1)
     if shape == "bell":
-        y = 4 * x * (1 - x)
+        y = 4 * x * (1 - x) * 3/2
     elif shape == "early":
-        y = np.power(1 - (1 - x)**3, 1.5) * (1 - x)
+        y = np.power(1 - (1 - x)**3, 1.5) * (1 - x) / 0.256
     elif shape == "late":
-        y = np.power(x, 1.5) * (1 - x)**0.3
+        y = np.power(x, 1.5) * (1 - x)**0.3 / 0.254
     elif shape == "constant":
         y = np.where((x == 0.0) | (x == 1.0), 0.0, 1.0)
     else:
         y = np.where((x == 0.0) | (x == 1.0), 0.0, 1.0)
-    return peak * y
+    return peak * y / 10 # average is 0.1
 
 def _safe_randint(low, high_exclusive):
     """Return a random int in [low, high_exclusive); if invalid, return low."""
