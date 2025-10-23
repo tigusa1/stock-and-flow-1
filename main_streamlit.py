@@ -79,6 +79,19 @@ def run_streamlit():
               is specified by the *3rd slider* below.
             """)
 
+        with st.expander("ℹ️ Future possible developments in the simulator"):
+            st.markdown("""              
+            This basic simulator can be further developed in several ways:
+            - Insert **actual awards**.  Tens of thousands can be added.  The charts can be modified
+              to display **categories of awards** (e.g., grants, contracts, subawards) instead of
+              individual awards.
+            - Display the **projected trends** described in VP Heller's email.
+            - Use **probability of award termination** instead of declining award amounts.
+            - Convert awards to **equivalent flows**.
+            - Include **endogenous feedback**, such as the effects of reduced spending on
+              staff/faculty (through RIF) on future awards.
+            """)
+
         n_grants = st.slider("Number of awards", 10, 100, 30, 10,
                              help="Start times are uniformly distributed starting 36 months prior to " +
                                   "time 0 that is displayed on the charts.")
