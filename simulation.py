@@ -2,28 +2,37 @@ import random
 from stocks_new import Personnel, Project, CashStock
 
 def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, idc_rate,
-                   del_T_p_non_reimb=(-1,0.), del_T_p_idc_rate=(-1,0.), T=152, reimbursement_duration=2,
-                   p_delayed_NOA=0):
+                   del_T_p_non_reimb=(-1,0.), del_T_p_idc_rate=(-1,0.), T=52, reimbursement_duration=2,
+                   p_delayed_NOA=0, flag_faculty=False):
     # --- Setup ---
+    # set duration to be 52 weeks
+    #     start time from -52 to 52 weeks
+    #     amount is random from 0 to max_award
+    #     time T default is 52 weeks
+
+    # Initialize projects including project status (reimbursable or not)
+    #   and reimbursement duration
     projects = []
     for i in range(n_projects):
         is_non_reimbursable = random.random() < p_non_reimb
         if is_non_reimbursable:
             reimbursement_duration = -1 # overwrite
         else:
+            # If there is a probability of delayed NOA,
+            #   set reimbursement duration
             if random.random() < p_delayed_NOA:
                 proj_reimbursement_duration = random.randint(reimbursement_duration,52)
             else:
                 proj_reimbursement_duration = reimbursement_duration
-        duration = random.randint(51, 52) if reimbursement_duration > 0 else 52  # avoid very short projects
-        start = random.randint(-51, 50)  # project can start before simulation
+        duration = random.randint(52, 53) if reimbursement_duration > 0 else 52  # avoid very short projects
+        start = random.randint(-51, 53)  # project can start before simulation
         end = start + duration
         if end < 0 or start >= T:
             continue  # completely outside simulation window
 
         proj = Project(
             f"Project {i+1}", start, end,
-            award_amount = random.randint(int(0.75 * max_award), max_award),
+            award_amount = random.randint(int(0.0 * max_award), max_award),
             reimbursement_duration = proj_reimbursement_duration
         )
         projects.append(proj)
@@ -45,12 +54,13 @@ def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, id
         total_spend_reimbursable += spend_this_step_reimb
         total_spend_non_reimbursable += spend_this_step_non_reimb
 
-    total_faculty_salary = total_spend_non_reimbursable + round(total_spend_reimbursable*(1+idc_rate))
-    project_faculty_salary = total_spend_non_reimbursable + total_spend_reimbursable
-    alpha = project_faculty_salary / total_faculty_salary
-    N = int(total_faculty_salary / avg_salary)
-    # alpha might not be needed
-    faculty = Personnel("faculty", N=N, average_salary=avg_salary, alpha=alpha)
+    if flag_faculty:
+        total_faculty_salary = total_spend_non_reimbursable + round(total_spend_reimbursable*(1+idc_rate))
+        project_faculty_salary = total_spend_non_reimbursable + total_spend_reimbursable
+        alpha = project_faculty_salary / total_faculty_salary
+        N = int(total_faculty_salary / avg_salary)
+        # alpha might not be needed
+        faculty = Personnel("faculty", N=N, average_salary=avg_salary, alpha=alpha)
 
     cash = CashStock("Main Cash", initial_value=cash_init)
     for proj in projects:
@@ -59,13 +69,17 @@ def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, id
     cash_history = []
     receivable_reimbursable = []
     receivable_non_reimbursable = []
-    idc_log = []
-    inst_paid_log = []
+    idc_log = [] # log of amount idc paid
+    inst_paid_log = [] # log of amount the institution paid to faculty
     reimbursement_by_project = [[] for _ in projects]
 
     for t in range(T):
         # cash.update(t) # calls spend rate
-        faculty_inst_pay = faculty.total_comp()
+        total_spend = 0.0
+        if flag_faculty:
+            faculty_inst_pay = faculty.total_comp()
+        else:
+            faculty_inst_pay = 0.0
 
         if t==int(del_T_p_non_reimb[0]): # time of possible change
             for proj in projects: # for projects with reimbursement that haven't started
@@ -83,8 +97,9 @@ def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, id
             proj_spend = proj.spend_rate(t)
             proj_reimb = proj.reimbursement_rate(t)
             reimbursement_by_project[i].append(proj_reimb)
-            faculty_inst_pay -= proj_spend
             cash.value -= proj_spend
+            if flag_faculty:
+                faculty_inst_pay -= proj_spend
 
             if proj_reimb > 0:
                 idc = round(proj_reimb * idc_rate)
@@ -102,6 +117,7 @@ def run_simulation(avg_salary, cash_init, p_non_reimb, n_projects, max_award, id
             p.receivable_amount for p in projects if p.reimbursement_duration == -1
         ))
         # inst_paid_total = faculty.institution_paid()
+        # inst_paid_log
         if t>0:
             cash.value -= faculty_inst_pay
             inst_paid_log.append(faculty_inst_pay)

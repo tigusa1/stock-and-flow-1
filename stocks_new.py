@@ -1,3 +1,4 @@
+import json
 
 class Personnel:
     def __init__(self, role, N, average_salary, alpha):
@@ -17,36 +18,92 @@ class Personnel:
 
 
 class Project:
-    def __init__(self, name, start_date, end_date, award_amount, reimbursement_duration=2):
+    def __init__(self, name, start_date, end_date, award_amount, reimbursement_duration=2,
+                 change_in_duration_date=10**10, reimbursement_duration_2=2, t=0):
+        # t is the start time of the simulation
         self.name = name
-        self.start_date = start_date
-        self.end_date = end_date
+        self.start_date = round(start_date)
+        self.end_date = round(end_date)
         self.award_amount = award_amount
-        self.duration = end_date - start_date
-        self.reimbursement_duration = reimbursement_duration
-        self.award_balance = award_amount
+        self.duration = round(end_date - start_date)
+        self.reimbursement_duration = round(reimbursement_duration)
+        self.change_in_duration_date = round(change_in_duration_date)
+        self.reimbursement_duration_2 = round(reimbursement_duration_2)
+        self.NOA_delay = 0.0
+        self.print = False # v2
+        self.type = 0
 
         self.receivable_amount = 0.0
         self.reimbursement_schedule = set()
 
-        if reimbursement_duration != -1:
-            t = start_date + reimbursement_duration
-            while t < end_date:
-                self.reimbursement_schedule.add(t)
-
-                t += reimbursement_duration
-            self.reimbursement_schedule.add(end_date)
-
-    def spend_rate(self, t, flag_record_receivable=True):
+        if reimbursement_duration > 0:
+            self.set_reimbursement_schedule(start_date, end_date, reimbursement_duration,
+                                            change_in_duration_date, reimbursement_duration_2)
         if self.start_date < t < self.end_date:
-            rate = round(self.award_amount / self.duration)
+            remaining_duration = self.end_date - t
+            self.award_balance = award_amount * remaining_duration / self.duration # scale amount by remaining after t
+        else:
+            self.award_balance = award_amount
+
+        self.print_json('__init__')
+
+    def set_reimbursement_schedule(self, start_date, end_date, reimbursement_duration,
+                                   change_in_duration_date, reimbursement_duration_2):
+        self.reimbursement_schedule = set()
+        t = round(start_date)
+        while t < round(min(change_in_duration_date, end_date)):
+            reimbursement_duration = round(reimbursement_duration)
+            t += reimbursement_duration
+            self.reimbursement_schedule.add(t)
+        t2 = round(start_date)
+        if change_in_duration_date < end_date:
+            while t2 < round(end_date):
+                t2 += reimbursement_duration_2
+                if t2 > change_in_duration_date and t2 >= t + reimbursement_duration:
+                    self.reimbursement_schedule.add(t2)
+            # self.reimbursement_schedule.add(t2 + reimbursement_duration_2)
+        # else:
+            # self.reimbursement_schedule.add(t + reimbursement_duration)
+
+        # while t < round(end_date):
+        #     if t > round(change_in_duration_date):
+        #         reimbursement_duration = reimbursement_duration_2
+        #     reimbursement_duration = round(reimbursement_duration)
+        #     t += reimbursement_duration
+        #     self.reimbursement_schedule.add(t)
+        # self.reimbursement_schedule.add(t + reimbursement_duration)
+
+    def print_json(self, heading, key=None):
+        if self.print:
+            print(heading)
+            if key is None:
+                # print the whole object
+                print(json.dumps(self.__dict__, indent=4, sort_keys=True, default=str))
+            else:
+                # print just one key–value pair
+                value = self.__dict__.get(key, "<missing>")
+                print(json.dumps({key: value}, indent=4, sort_keys=True, default=str))
+
+    def spend_rate(self, t, flag_record_receivable=True, reduced_burn_rate=100.):
+        if self.start_date < t < self.end_date:
+            remaining_duration = self.end_date - t
+            if reduced_burn_rate < 100.:
+                rate = round(self.award_amount / self.duration) * reduced_burn_rate
+            else:
+                rate = (self.award_balance / remaining_duration)
+            # if recording receivables, add the burn rate to the receivable amount
             if flag_record_receivable:
+                self.print_json('spend_rate (before change)', key='receivable_amount')
                 self.receivable_amount += rate
+                self.award_balance -= rate
+                self.print_json('spend_rate (after change)', key='receivable_amount')
             return rate
         return 0.0
 
     def reimbursement_rate(self, t):
-        if t in self.reimbursement_schedule: # reimbursement_schedule = () if reimbursement_duration = -1
+        # if t is in the reimbursement schedule, return the accumulated receivable amount, otherwise, 0
+        if t in self.reimbursement_schedule: # reimbursement_schedule = set() if reimbursement_duration = -1
+            self.print_json('reimbursement_rate', key='receivable_amount')
             amt = self.receivable_amount
             # self.receivable_amount = 0.0
             return amt
@@ -54,8 +111,8 @@ class Project:
 
     def update_receivable(self, t):
         if t in self.reimbursement_schedule:
+            self.print_json('update_receivable', key='receivable_amount')
             self.receivable_amount = 0.0
-
 
 class CashStock:
     def __init__(self, name, initial_value=0.0):

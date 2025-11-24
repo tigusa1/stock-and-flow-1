@@ -14,7 +14,8 @@ def is_debugging():
     """Checks if the current Python process is being debugged."""
     return hasattr(sys, 'gettrace') and sys.gettrace() is not None
 
-flag_show_SD = False
+flag_show_SD = True
+flag_faculty = False
 
 # --- STREAMLIT ENTRY POINT ---
 def run_streamlit():
@@ -38,15 +39,20 @@ def run_streamlit():
     if flag_show_SD:
         col1, col2, col3 = st.columns([1, 1, 2])  # adjust width ratio if needed
         with col1:
-            with st.expander("Basic Settings", expanded=False):
+            with st.expander("Basic Settings", expanded=True):
                 reimbursement_duration = st.slider("Reimbursement duration", 1, 10, 2)
-                avg_salary = st.slider("Average Faculty Salary", 50, 200, 120, step=5)
-                cash_init = st.slider("Initial Cash Balance", 0, 500, 00, step=10)
-                n_projects = st.slider("Number of Projects", 2, 2000, 1500)
-                max_award = st.slider("Max Award Amount", 100, 2000, 1000, step=50)
+                if flag_faculty:
+                    avg_salary = st.slider("Average Faculty Salary", 50,  200,  120, step=5  )
+                else:
+                    avg_salary = 0
+                cash_init  = st.slider("Initial Cash Balance ($MM)",    0, 8000, 4100, step=200)
+                n_projects = st.slider("Number of Projects",    500, 8000, 4500, step=500)
+                max_award  = st.slider("Max Award Amount (yearly, $MM)",      0.1,  2.0,  1.0, step=0.1)
+                max_award *= 1000 # convert to $K
     else:
         col_spacer1, col2, col_spacer2, col3, col_spacer3 = st.columns([0.2, 2, 0.5, 3, 0.2])
 
+    # PROJECTS
     with col2:
         # Try to save the state, but slider change immediately causes rerun so del_T1_non_reimb is not saved
         #  (but seems to be saved the second time the slider is changed)
@@ -100,7 +106,7 @@ def run_streamlit():
         decline_factor = st.slider("Decline as percentage of original award (%)",
                                 10, 100, 50, 5,
                                 help="Amount that each award is reduced.") / 100
-        n_months = st.slider("Simulation duration (months)", 36, 84, 72, 12,
+        n_simulation_months = st.slider("Simulation duration (months)", 36, 84, 72, 12,
                                 help=".")
         # show_gantt = st.checkbox("Show Gantt Chart", True)
         # seed = st.number_input("Random seed", 0, 9999, 3)
@@ -110,7 +116,7 @@ def run_streamlit():
 
         if flag_show_SD:
             with st.expander("Non-reimbursable projects", expanded=False):
-                p_non_reimb = st.slider("Probability of Non-reimbursable Project", 0.0, 1.0, 0.00)
+                p_non_reimb = st.slider("Probability of Non-reimbursable Project (current)", 0.0, 1.0, 0.00)
                 p_delayed_NOA = st.slider("Probability of Delayed NOA", 0.0, 1.0, 0.00)
                 # show_del_non_reimb = st.toggle("Change non-reimbursable rate mid-year")
                 # if show_del_non_reimb:
@@ -152,16 +158,16 @@ def run_streamlit():
             # Format Y-axis ticks with commas
             # ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:,.0f}"))
             def thousands(x, pos):
-                return f"{x / 1000:.2f}"
+                return f"{x / 1000:.2f}" # change labels instead of dividing by 1000
             ax.yaxis.set_major_formatter(FuncFormatter(thousands))
             ax.legend()
             ax.grid(True)
             st.pyplot(fig)
 
         # Generate data
-        t = np.arange(n_months)
-        burns,burns_BL = generate_projects(t, n_grants, decline_month, decline_factor, n_months,
-                                           seed=seed, shape=burn_shape)
+        Ts_simulation = np.arange(n_simulation_months)
+        burns,burns_BL = generate_projects(Ts_simulation, n_grants, decline_month, decline_factor, n_simulation_months, seed=seed,
+                                           shape=burn_shape)
         total = burns.sum(axis=0)
         total_BL = burns_BL.sum(axis=0)
 
@@ -171,9 +177,9 @@ def run_streamlit():
                                            gridspec_kw={'height_ratios': [2, 1]},
                                            constrained_layout=True)
             # Ribbon chart
-            ax1.stackplot(t, burns, alpha=0.7)
-            ax1.plot(t, total_BL, "k--", lw=2.5, label="Baseline (no decline)")
-            ax1.plot(t, total, color="red", lw=2.5, label="With decline")
+            ax1.stackplot(Ts_simulation, burns, alpha=0.7)
+            ax1.plot(Ts_simulation, total_BL, "k--", lw=2.5, label="Baseline (no decline)")
+            ax1.plot(Ts_simulation, total, color="red", lw=2.5, label="With decline")
             ax1.axvline(decline_month, color="red", ls=":", label="Decline starts")
             ax1.set_ylabel("Monthly Spending ($M)")
             ax1.set_title("Ribbon Chart: Total Revenue Over Time")
@@ -183,7 +189,7 @@ def run_streamlit():
             if ax2 is not None:
                 norm_burns = burns / np.max(burns, axis=1, keepdims=True)
                 im = ax2.imshow(norm_burns, aspect="auto", cmap="YlOrRd",
-                                extent=[t[0], t[-1], 0, burns.shape[0]])
+                                extent=[Ts_simulation[0], Ts_simulation[-1], 0, burns.shape[0]])
                 ax2.axvline(decline_month, color="gray", ls=":")
                 ax2.set_xlabel("Month")
                 ax2.set_ylabel("Project Index")
@@ -202,19 +208,21 @@ def run_streamlit():
         # - The **right column** updates the ribbon (and optionally the Gantt) plot in real time.
         # """)
 
-        png_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month,
+        png_path = make_project_activity_animation(Ts_simulation, burns, burns_BL, n_simulation_months, decline_month,
                                                    animate=False)  # DEBUG
 
         st.image(png_path, width="stretch")
 
         if is_debugging():
             print("DEBUG MODE")
-            gif_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month) # DEBUG
+            gif_path = make_project_activity_animation(Ts_simulation, burns, burns_BL, n_simulation_months,
+                                                       decline_month)  # DEBUG
         else:
             # ANIMATION
             # if st.button("Generate Animation"):
             with st.spinner("Creating animation... please wait ⏳"):
-                gif_path = make_project_activity_animation(t, burns, burns_BL, n_months, decline_month)
+                gif_path = make_project_activity_animation(Ts_simulation, burns, burns_BL, n_simulation_months,
+                                                           decline_month)
             # st.success("Animation complete!")
             # fig, ax = plt.subplots()
             # st.pyplot(fig)
