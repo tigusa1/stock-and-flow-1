@@ -1,0 +1,1 @@
+web: streamlit run main_streamlit_v3.py --server.port 8080 --server.address 0.0.0.0
