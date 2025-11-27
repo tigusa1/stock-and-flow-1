@@ -68,7 +68,7 @@ def set_quarterly_ticks(T, start_year, ax):
 
 
 def burn_rate(burns, burns_BL, reimbursement_duration, save_Excel = True):
-    burns = np.atleast_2d(burns)
+    burns = np.atleast_2d(burns) # shape = number of projects, time
     burns_BL = np.atleast_2d(burns_BL)
     burns = burns[:,reimbursement_duration:]
     burns_BL = burns_BL[:,reimbursement_duration:]
@@ -192,13 +192,15 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
     ax3.set_ylabel("Spend rate ($MM/month)")
     vline3 = ax3.axvline(0, color="black", linestyle=":", lw=1.5)
     if decline_month > 0:
-        vlineD = ax3.axvline(decline_month*12/52, color="red", ls=":", label="Time of increased reimbursement delay")
-        ax4.axvline(decline_month*12/52, color="red", ls=":", label="Time of increased reimbursement delay")
+        # REMOVE delayed NOA
+        vlineD = None
+        # vlineD = ax3.axvline(decline_month*12/52, color="red", ls=":", label="Time of increased reimbursement delay")
+        # ax4.axvline(decline_month*12/52, color="red", ls=":", label="Time of increased reimbursement delay")
     else:
         vlineD = None
     if del_T_p_non_reimb[1] > 0:
         ax4.axvline((del_T_p_non_reimb[0] - reimbursement_duration)*12/52, color="yellow", ls=":",
-                    label="Time of increased probability of no NOA")
+                    label="Month of increased probability \nof unawarded pending projects")
     if closing_date:
         ax4.axvline(months_between(datetime.datetime(start_year,1,1),closing_date), color="red", ls=":",
                     label="database closing date")
@@ -221,7 +223,8 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
     # final_colors = [colors[i] for i in active_idx_final]
 
     # Fixed order of projects (earliest start first)
-    labels = ['normal projects', 'no NOA', 'delayed NOA', 'est. new projects']
+    # labels = ['normal projects', 'no NOA', 'delayed NOA', 'est. new awards'] # REMOVE delayed NOA
+    labels = ['normal projects', 'unawarded pending projects', 'estimated new awards']
     final_order = np.argsort(start_idx)
     if len(final_order) > len(labels):
         final_labels = []

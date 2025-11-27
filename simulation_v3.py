@@ -43,10 +43,11 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
         print(f"P_end, P_duration not used, P_start reset to 0")
         print(f"Jan 1 of start_year ({start_year}) = simulation week 0 = ref_date")
 
+        rand_dates = np.random.randint(-2,0,n_projects)
         start_dates = df["P_start"].tolist()
         end_dates = df["P_end"].tolist()
-        starts = [(d - ref_date).days // 7 for d in start_dates]
-        ends = [(d - ref_date).days // 7 for d in end_dates]
+        starts = [(d - ref_date).days // 7 for d in start_dates] + rand_dates
+        ends = [(d - ref_date).days // 7 for d in end_dates] + rand_dates
         # C_tot TotalGrantAmount (sum of NOAs to date)
         # C_amt FundedAmount_dec_ (original award)
         max_awards_pd = df["C_amt"] / 1000 # USD -> 1000 USD
@@ -101,7 +102,7 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
                 proj.end_date, proj_reimbursement_duration,
                 future_T_reimbursement_delay[0], future_T_reimbursement_delay[1])
             proj.NOA_delay = p_T1_delayed_NOA[0] # amount of delay
-            proj.type = 2
+            proj.type = 2  # REMOVE delayed NOA
 
         # === PRINT PROJECT DICTIONARY ===
         # if proj.start_date > future_T_reimbursement_delay[0] - future_T_reimbursement_delay[1]*2 and \
@@ -115,9 +116,14 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
         d = datetime.datetime(2025, 11, 11)
         # starts = [(d - ref_date).days // 7 for d in start_dates]
         start = (d - ref_date).days // 7 # begin at closure date
-        duration_new = 52*2 # duration of new awards
+        duration_new = 52*5 # duration of new awards ABOUT $120 MM OVER 5 YEARS = $24 MM PER YEAR (LOW ESTIMATE), $30 MM (HIGH)
+        duration_new_months = duration_new / 52. * 12
         n_projects_new = duration_new
-        max_award_new = 38800000. / 1000. / 52. * 12. # 1000 USD
+        # OVER 1 YEAR, 52 NEW PROJECTS TOTALING $30 MM PER MONTH
+        #   EACH PROJECT IS $30 MM / 52
+        #   MAX AWARD = $30 MM / 52 (PER MONTH) * DURATION (MONTHS) = $30000 K / 52 * (12*5)
+        max_award_new = new_awards_pct * 24000. / 52. * duration_new_months
+        # max_award_new = new_awards_pct * 38800000. / 1000. / 52. * 12. # 1000 USD
         for i_new in range(n_projects_new):
             n_projects += 1
             start += 1
@@ -128,7 +134,7 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
                 change_in_duration_date = 0,
                 reimbursement_duration_2 = 1
             )
-            proj.type = 3
+            proj.type = 2 # REMOVE delayed NOA
             projects.append(proj)
 
     proj_types = np.zeros(n_projects)
@@ -241,4 +247,4 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
             total_avg_reimbursement, total_spend_reimbursable, total_spend_non_reimbursable,
             np_grants, np_grants_BL, projects, cash,
             np.array(spend_by_project), np.array(reimbursement_by_project),
-            proj_types) # v2 return np grants arrays
+            proj_types) # v2 return np grants arrays, np_grants = burns

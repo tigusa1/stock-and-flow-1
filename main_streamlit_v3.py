@@ -19,6 +19,12 @@ from dateutil.relativedelta import relativedelta
 
 def is_debugging():
     """Checks if the current Python process is being debugged."""
+    sys_breakpoint = sys.breakpointhook.__module__ != "sys"
+    sys_trace = sys.gettrace() != None
+    return sys_breakpoint or sys_trace
+
+def is_debugging_NG():
+    """Checks if the current Python process is being debugged."""
     return hasattr(sys, 'gettrace') and sys.gettrace() is not None
 
 def thousands(x, pos):
@@ -43,7 +49,10 @@ def sm(y):
 # --- STREAMLIT ENTRY POINT ---
 def run_streamlit():
     # === DATES OF ANALYSIS, CLOSING DATE ===
+    # print("gettrace():", sys.gettrace())
     start_year = 2025
+    end_year = 2027
+    n_simulation_months = (end_year - start_year + 1) * 12 - 1
     # closing_date corresponds to the Excel file date
     # relativedelta(years) is used to examine previous closing dates (retaining only new awards up to adjusted closing date
     closing_date = datetime.datetime(2025,11,11)
@@ -56,9 +65,9 @@ def run_streamlit():
         flag_use_saved = False
         plot_individual_projects = False
     else:
-        flag_use_saved = st.toggle("Use saved values")
-        plot_individual_projects = st.toggle("Plot individual projects")
-
+        flag_use_saved = False
+        # flag_use_saved = st.toggle("Use saved values")
+        plot_individual_projects = st.toggle("Plot individual projects (requires several minutes)")
 
     if flag_use_saved:
         n_projects_yr_0 = 3400
@@ -66,21 +75,21 @@ def run_streamlit():
         max_award_0 = 1.0
         n_months_0 = 24 + 24
 
-        reimbursement_duration_0 = 3
-        future_reimbursement_duration_0 = 5
-        T1_reimbursement_duration_0 = 12
+        reimbursement_duration_0 = 2
+        future_reimbursement_duration_0 = 2
+        T1_reimbursement_duration_0 = 6.0
 
-        p_non_reimb_0 = 3.0
-        del_p_non_reimb_0 = 10.0
-        del_T1_non_reimb_0 = 20
+        p_non_reimb_0 = 10.0
+        del_p_non_reimb_0 = 0.0
+        del_T1_non_reimb_0 = 12.0
 
-        p_delayed_NOA_0 = 25.0
-        T1_NOA_0 = 8.0
+        p_delayed_NOA_0 = 0.0
+        T1_NOA_0 = 100000
         reduction_in_burn_rate_0 = 50.0
         T1_reduction_in_burn_rate_0 = 4.0
         idc_rate_0 = 55.0
-        idc_2_rate_0 = 30.0
-        T1_idc_2_rate_months_0 = 15
+        idc_2_rate_0 = 55.0
+        T1_idc_2_rate_months_0 = 12
     else:
         n_projects_yr_0 = 3400
         cash_init_0 = 4100
@@ -88,12 +97,12 @@ def run_streamlit():
         n_months_0 = 24
         reimbursement_duration_0 = 2
         future_reimbursement_duration_0 = 2
-        T1_reimbursement_duration_0 = 26
+        T1_reimbursement_duration_0 = 6.0
         p_non_reimb_0 = 0.0
         del_p_non_reimb_0 = 0.0
-        del_T1_non_reimb_0 = 0
+        del_T1_non_reimb_0 = 0.0
         p_delayed_NOA_0 = 0.0
-        T1_NOA_0 = 0.0
+        T1_NOA_0 = 100000
         reduction_in_burn_rate_0 = 100.0
         T1_reduction_in_burn_rate_0 = 0.0
         idc_rate_0 = 55.0
@@ -113,7 +122,7 @@ def run_streamlit():
         # decline_factor = 50/100
         # n_simulation_months = 36 + 12
         # n_simulation_months = (2026 - start_year + 1) * 12 # until the end of 2026
-        n_simulation_months = (2030 - start_year + 1) * 12 # until the end of 2030
+        # n_simulation_months = (2030 - start_year + 1) * 12 # until the end of 2030
         p_non_reimb = 0.0
         p_delayed_NOA = 0.0
         del_T1_non_reimb = 0
@@ -159,22 +168,28 @@ def run_streamlit():
                 # n_projects = st.slider("Number of Projects",    5, 80, 45, step=5)
                 # max_award *= 1000*10 # convert to $K
                 # n_simulation_months = st.slider("Simulation duration (months)", 2, 4, 2, help=".")
-                n_projects_yr = st.slider("Number of projects per year (1000s)", 1000, 5000, n_projects_yr_0, step=100)
-                max_award  = st.slider("Average award ($MM/year)",      0.1,  2.0,  max_award_0, step=0.1)
+                # DISABLE SLIDERS
+                n_projects_yr = n_projects_yr_0
+                max_award = max_award_0
+                # n_projects_yr = st.slider("Number of projects per year (1000s)", 1000, 5000, n_projects_yr_0, step=100)
+                # max_award  = st.slider("Average award ($MM/year)",      0.1,  2.0,  max_award_0, step=0.1)
                 max_award *= 1000 # convert to $K
-                start_year = st.slider("Start year", 2020, 2025, start_year, 1)
-                n_simulation_months = st.slider("Simulation duration (months)", 24, 84, n_months_0, 3,
-                                                help=".")
+                start_year = st.slider("Start year", 2018, 2026, start_year, 1)
+                end_year = st.slider("End year", 2025, 2030, end_year, 1)
+                # n_simulation_months = st.slider("Simulation duration (months)", 24, 84, n_months_0, 3,
+                #                                 help=".")
+                n_simulation_months = (end_year - start_year + 1) * 12 - 1
 
         with col2:
-            with st.expander("Projected new awards", expanded=True):
-                new_awards_pct = st.slider("New awards (percent of historical data)", 0., 150., 100., 5.) / 100.
+            with st.expander("Projected New Awards", expanded=True):
+                new_awards_pct = st.slider("New awards (percent of historical award rate)", 0., 150., 100., 5.) / 100.
 
             with st.expander("Reimbursement Delays", expanded=True):
                 reimbursement_duration = st.slider("Current delay (weeks)", 1, 10, reimbursement_duration_0)
                 future_reimbursement_duration = st.slider("Future delay (weeks)", 1, 10, future_reimbursement_duration_0)
-                T1_reimbursement_duration = st.slider("Time of future delay (weeks)",
-                                                      1, 52, T1_reimbursement_duration_0) + reimbursement_duration
+                T1_reimbursement_duration = st.slider("Time of future delay (months)",
+                                             0.0, 12.0, T1_reimbursement_duration_0, 1.0) * 52 / 12 + \
+                                             reimbursement_duration
 
         # PROJECTS
         with col1:
@@ -212,20 +227,22 @@ def run_streamlit():
             #       staff/faculty (through RIF) on future awards.
             #     """)
             #
-            with st.expander("Awarded Projects That Will Never Receive an NOA", expanded=True):
+            with st.expander("Pending Projects That Are Not Awarded (use start year = 2022 to see long-term effects)", expanded=True):
                 p_non_reimb = st.slider("Current probability (%)", 0.0, 25., p_non_reimb_0, 1.0) / 100
-                del_p_non_reimb = st.slider("Future, change in probability (%)",
+                del_p_non_reimb = st.slider("Future change in probability (%)",
                                             0.0, 75.0, del_p_non_reimb_0, 1.0) / 100
-                del_T1_non_reimb = st.slider("Time of probability change (weeks)", 0, 50, del_T1_non_reimb_0, 1) + \
+                del_T1_non_reimb = st.slider("Time of probability change (months)",
+                                             0.0, 12.0, del_T1_non_reimb_0, 1.0) * 52 / 12 + \
                     reimbursement_duration
 
-            with st.expander("Delays in reduced expenditures of projects pending NOA", expanded=True):
+            with st.expander("Reduced Expenditures of Pending Projects", expanded=True):
                 reduction_in_burn_rate = st.slider("Reduced spending rate (< 100%)",
                                                    0.0, 100.0, reduction_in_burn_rate_0, 1.0) / 100
                 T1_reduction_in_burn_rate = st.slider("Time of reduced spending (months)",
-                                                      0.0, 12.0, T1_reduction_in_burn_rate_0, 0.5) * 52 / 12 + \
+                                                      0.0, 12.0, T1_reduction_in_burn_rate_0, 1.0) * 52 / 12 + \
                     reimbursement_duration
 
+            # DON'T USE SLIDERS HERE, JUST USE DEFAULT VALUE
             p_delayed_NOA = p_delayed_NOA_0
             T1_NOA = T1_NOA_0
 
@@ -302,21 +319,24 @@ def run_streamlit():
         months = np.arange(len(cash_balance[d:]))/52*12
         axs[0].plot(months, sm(cash_balance[d:] - idc_cumloss), label="Cash Balance", linewidth=2)
         axs[0].set_title("Cash Balance")
-        axs[1].plot(months, sm(total_spend[d:])*52/12, label="Expenditures", linewidth=2)
-        axs[1].plot(months, sm(total_reimbursement[d:])*52/12, label="Reimbursements", linewidth=2)
-        axs[1].set_title("Expenditures & Reimbursements")
-        axs[2].plot(months, sm(idc_log[d:])*52/12, label="IDC (55%)", linewidth=2)
-        axs[2].plot(months, sm(idc_2_log[d:])*52/12, label=f"IDC ({idc_2_rate*100:.0f}% at {T1_idc_2_rate_months:.0f} months)", linewidth=2)
-        axs[2].set_title("IDC (monthly)")
-        axs[3].plot(months, -idc_cumloss, label="Cumulative loss of IDC",
+        axs[2].plot(months, sm(total_reimbursement[d:])*52/12, label="Revenue", linewidth=2)
+        axs[2].plot(months, sm(total_spend[d:])*52/12, label="Expenditures", linewidth=2)
+        axs[2].set_title("Expenditures & Revenue")
+        axs[3].plot(months, sm(idc_log[d:])*52/12, label="IDC (55%)", linewidth=2)
+        axs[3].plot(months, sm(idc_2_log[d:])*52/12, label=f"IDC ({idc_2_rate*100:.0f}% at {T1_idc_2_rate_months:.0f} months)", linewidth=2)
+        axs[3].set_title("IDC (monthly)")
+        axs[1].plot(months, -idc_cumloss, label="Cumulative loss of IDC",
                     linewidth=2)
-        axs[3].set_title("Cumulative loss of IDC")
+        axs[1].set_title("Cumulative loss of IDC")
+        axs[0].set_ylabel("Amount ($MM)")
+        axs[1].set_ylabel("Amount ($MM)")
+        axs[2].set_ylabel("Spend rate ($MM/month)")
+        axs[3].set_ylabel("Spend rate ($MM/month)")
 
     for ax in axs:
         set_quarterly_ticks(T, start_year, ax)
         ax.set_xlabel("Quarter")
         # ax.set_xlabel("Time (months)")
-        ax.set_ylabel("Amount ($MM)")
         # Format Y-axis ticks with commas
         # ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:,.0f}"))
         ax.yaxis.set_major_formatter(FuncFormatter(thousands))
@@ -348,7 +368,8 @@ def run_streamlit():
     print(f"proj_types {np.shape(proj_types)}")
 
     # REPLACE burns WITH reimbursement_types, spend_types
-    types = list(range(4)) # ***** REPLACE WITH ACTUAL NUMBER OF TYPES *****
+    # REMOVE delayed NOA
+    types = list(range(3)) # ***** REPLACE WITH ACTUAL NUMBER OF TYPES *****
     # types = np.unique(proj_types)
     burns_types = np.zeros((len(types),T))
     for typ in types:

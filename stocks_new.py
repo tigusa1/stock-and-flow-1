@@ -1,5 +1,8 @@
 import json
 
+import numpy as np
+
+
 class Personnel:
     def __init__(self, role, N, average_salary, alpha):
         self.role = role
@@ -53,12 +56,20 @@ class Project:
         t = round(start_date)
         while t < round(min(change_in_duration_date, end_date)):
             reimbursement_duration = round(reimbursement_duration)
-            t += reimbursement_duration
+            if reimbursement_duration >= 2:
+                rand_duration = np.random.randint(reimbursement_duration - 1)
+            else:
+                rand_duration = 0
+            t += reimbursement_duration - rand_duration
             self.reimbursement_schedule.add(t)
-        t2 = round(start_date)
         if change_in_duration_date < end_date:
+            t2 = round(start_date)
             while t2 < round(end_date):
-                t2 += reimbursement_duration_2
+                if reimbursement_duration_2 >= 2:
+                    rand_duration = np.random.randint(reimbursement_duration_2 - 1)
+                else:
+                    rand_duration = 0
+                t2 += reimbursement_duration_2 - rand_duration
                 if t2 > change_in_duration_date and t2 >= t + reimbursement_duration:
                     self.reimbursement_schedule.add(t2)
             # self.reimbursement_schedule.add(t2 + reimbursement_duration_2)
