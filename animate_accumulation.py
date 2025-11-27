@@ -342,10 +342,26 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
         fig.delaxes(ax3) # animation (beginning at time t = 0)
         # fig.subplots_adjust(hspace=0.3)  # tighten spacing after removing
 
-        static_path = save_as.replace(".gif", "_static.png")
-        fig.savefig(static_path, dpi=600)
-        # fig.savefig(static_path, bbox_inches="tight")
+        flag_buffer = True
+        # USE BUFFER
+        if flag_buffer:
+            import io
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png")
+            buf.seek(0)
+        else:
+            # USE PNG
+            static_path = save_as.replace(".gif", "_static.png")
+            fig.savefig(static_path, dpi=600)
+            # fig.savefig(static_path, bbox_inches="tight")
+
         plt.close(fig)
-        save_as = static_path # stacked plot at end time, saved in activity_animation_static.png
+
+        if flag_buffer:
+            save_as = buf
+            # AFTER RETURN
+            # st.image(buf)
+        else:
+            save_as = static_path # stacked plot at end time, saved in activity_animation_static.png
 
     return save_as

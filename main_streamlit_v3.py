@@ -348,7 +348,7 @@ def run_streamlit():
         with col3:
             # st.subheader("Cash and Receivable Balances Over Time")
             fig.tight_layout()
-            st.pyplot(fig)
+            st.pyplot(fig, clear_figure=True)
     else:
         plt.tight_layout()
         plt.show()
@@ -419,6 +419,7 @@ def run_streamlit():
                                                                start_year=start_year,
                                                                del_T_p_non_reimb=del_T_p_non_reimb)
 
+            # st.image(buf)
             st.image(gif_path, width="stretch")
 
 # --- STREAMLIT ONLY ---
