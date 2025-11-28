@@ -614,7 +614,7 @@ def run_simulation_and_plot(params):
                             start_year=start_year,
                             del_T_p_non_reimb=del_T_p_non_reimb,
                         )
-                st.image(gif_path, width="stretch")
+                st.image(gif_path, width=True)
         else:
             with st.spinner("Creating animation... please wait ⏳"):
                 if plot_individual_projects:
@@ -640,7 +640,7 @@ def run_simulation_and_plot(params):
                         start_year=start_year,
                         del_T_p_non_reimb=del_T_p_non_reimb,
                     )
-            st.image(gif_path, width="stretch")
+            st.image(gif_path, width=True)
 
 
 # ------------- STREAMLIT SCRIPT ENTRY POINT -------------
@@ -1014,7 +1014,7 @@ if st.session_state["run_sim"]:
                                                                    del_T_p_non_reimb=del_T_p_non_reimb)
 
                 # st.image(buf)
-                st.image(gif_path, width="stretch")
+                st.image(gif_path, width=True) 
 
 # --- STREAMLIT ONLY ---
 if __name__ == "__main__":
