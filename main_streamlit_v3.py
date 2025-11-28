@@ -617,7 +617,7 @@ def run_simulation_and_plot(params):
                             start_year=start_year,
                             del_T_p_non_reimb=del_T_p_non_reimb,
                         )
-                st.image(gif_path, use_column_width=True)
+                st.image(gif_path, use_container_width=True)
         else:
             with st.spinner("Creating animation... please wait ⏳"):
                 if plot_individual_projects:
@@ -643,7 +643,7 @@ def run_simulation_and_plot(params):
                         start_year=start_year,
                         del_T_p_non_reimb=del_T_p_non_reimb,
                     )
-            st.image(gif_path, use_column_width=True)
+            st.image(gif_path, use_container_width=True)
 
 
 # ---------------------------------------------------------------------
