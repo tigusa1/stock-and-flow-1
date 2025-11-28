@@ -358,4 +358,305 @@ def render_ui():
 def run_simulation_and_plot(params):
     """
     Heavy simulation + plotting.
-    Called only when the user clicks the button
+    Called only when the user clicks the button (and session_state['run_sim'] is True).
+    """
+
+    # Unpack parameters
+    start_year = params["start_year"]
+    end_year = params["end_year"]
+    n_simulation_months = params["n_simulation_months"]
+    closing_date = params["closing_date"]
+    plot_individual_projects = params["plot_individual_projects"]
+    cash_init = params["cash_init"]
+    max_award = params["max_award"]
+    n_projects = params["n_projects"]
+    reimbursement_duration = params["reimbursement_duration"]
+    future_reimbursement_duration = params["future_reimbursement_duration"]
+    T1_reimbursement_duration = params["T1_reimbursement_duration"]
+    p_non_reimb = params["p_non_reimb"]
+    del_p_non_reimb = params["del_p_non_reimb"]
+    del_T1_non_reimb = params["del_T1_non_reimb"]
+    p_delayed_NOA = params["p_delayed_NOA"]
+    T1_NOA = params["T1_NOA"]
+    reduction_in_burn_rate = params["reduction_in_burn_rate"]
+    T1_reduction_in_burn_rate = params["T1_reduction_in_burn_rate"]
+    idc_rate = params["idc_rate"]
+    idc_2_rate = params["idc_2_rate"]
+    T1_idc_2_rate_months = params["T1_idc_2_rate_months"]
+    new_awards_pct = params["new_awards_pct"]
+    P_start = params["P_start"]
+    P_duration = params["P_duration"]
+    col3 = params["col3"]
+
+    # Derived timing
+    T1_idc_2_rate = T1_idc_2_rate_months * 52 / 12 + reimbursement_duration
+    del_T_p_non_reimb = (del_T1_non_reimb, del_p_non_reimb)
+    del_T_p_idc_rate = (T1_idc_2_rate, idc_2_rate)
+    p_T1_delayed_NOA = (T1_NOA, p_delayed_NOA)
+    reduction_T1_burn_rate = (T1_reduction_in_burn_rate, reduction_in_burn_rate)
+    future_T_reimbursement_delay = (T1_reimbursement_duration, future_reimbursement_duration)
+
+    T = round(n_simulation_months * 52 / 12)
+    P_end = T
+    print(f"P_start: {P_start}, P_end: {P_end}")
+
+    # === RUN SIMULATION OF PROJECTS ===
+    (
+        cash_history,
+        non_reimb1,
+        non_reimb2,
+        idc_log,
+        idc_2_log,
+        inst_paid_log,
+        total_avg_reimbursement,
+        total_spend_reimbursable,
+        total_spend_non_reimbursable,
+        burns,
+        burns_BL,
+        projects,
+        cash,
+        spend_by_project,
+        reimbursement_by_project,
+        proj_types,
+    ) = run_simulation(
+        cash_init,
+        p_non_reimb,
+        n_projects,
+        max_award,
+        idc_rate,
+        future_T_reimbursement_delay,
+        del_T_p_non_reimb,
+        del_T_p_idc_rate,
+        p_T1_delayed_NOA,
+        reduction_T1_burn_rate,
+        T=T,
+        reimbursement_duration=reimbursement_duration,
+        P_start=P_start,
+        P_end=P_end,
+        P_duration=P_duration,
+        start_year=start_year,
+        closing_date=closing_date,
+        new_awards_pct=new_awards_pct,
+    )
+
+    total_spend = np.sum(spend_by_project, axis=0)
+    total_reimbursement = np.sum(reimbursement_by_project, axis=0)
+    cash_balance = np.zeros(T)
+    cash_balance[0] = cash_init
+
+    d = reimbursement_duration  # used for convenience
+    for Ts_simulation in range(T - 1):
+        if Ts_simulation < d:
+            cash_balance[Ts_simulation + 1] = cash_balance[Ts_simulation]
+        else:
+            cash_balance[Ts_simulation + 1] = (
+                cash_balance[Ts_simulation]
+                - total_spend[Ts_simulation]
+                + total_reimbursement[Ts_simulation]
+            )
+
+    # === PLOTS ===
+    flag_original_plot = False
+    if flag_original_plot:
+        fig, ax = plt.subplots(1, 1, figsize=(9, 8))
+        axs = [ax]
+        axs[0].plot(cash_history, label="Cash Balance", linewidth=2)
+        axs[0].plot(non_reimb1, label="Receivable (Reimbursable Projects)", linestyle="--")
+        axs[0].plot(non_reimb2, label="Receivable (Non-reimbursable Projects)", linestyle=":")
+    else:
+        idc_cumloss = np.cumsum(np.array(idc_log[d:]) - np.array(idc_2_log[d:]))
+        fig, axs = plt.subplots(2, 2, figsize=(9, 8))
+        axs = axs.flatten()
+        months = np.arange(len(cash_balance[d:])) / 52 * 12
+        axs[0].plot(
+            months,
+            sm(cash_balance[d:] - idc_cumloss),
+            label="Cash Balance",
+            linewidth=2,
+        )
+        axs[0].set_title("Cash Balance")
+        axs[2].plot(
+            months,
+            sm(total_reimbursement[d:]) * 52 / 12,
+            label="Revenue",
+            linewidth=2,
+        )
+        axs[2].plot(
+            months,
+            sm(total_spend[d:]) * 52 / 12,
+            label="Expenditures",
+            linewidth=2,
+        )
+        axs[2].set_title("Expenditures & Revenue")
+        axs[3].plot(
+            months,
+            sm(idc_log[d:]) * 52 / 12,
+            label="IDC (55%)",
+            linewidth=2,
+        )
+        axs[3].plot(
+            months,
+            sm(idc_2_log[d:]) * 52 / 12,
+            label=f"IDC ({idc_2_rate * 100:.0f}% at {T1_idc_2_rate_months:.0f} months)",
+            linewidth=2,
+        )
+        axs[3].set_title("IDC (monthly)")
+        axs[1].plot(
+            months,
+            -idc_cumloss,
+            label="Cumulative loss of IDC",
+            linewidth=2,
+        )
+        axs[1].set_title("Cumulative loss of IDC")
+        axs[0].set_ylabel("Amount ($MM)")
+        axs[1].set_ylabel("Amount ($MM)")
+        axs[2].set_ylabel("Spend rate ($MM/month)")
+        axs[3].set_ylabel("Spend rate ($MM/month)")
+
+    for ax in axs:
+        set_quarterly_ticks(T, start_year, ax)
+        ax.set_xlabel("Quarter")
+        ax.yaxis.set_major_formatter(FuncFormatter(thousands))
+        if len(ax.get_lines()) > 1:
+            ax.legend()
+        ax.grid(True)
+
+    if not is_debugging():
+        if col3 is not None:
+            with col3:
+                fig.tight_layout()
+                show_fig(fig)
+        else:
+            fig.tight_layout()
+            show_fig(fig)
+    else:
+        plt.tight_layout()
+        plt.show()
+
+    # === SAVE BURN RATE IN EXCEL ===
+    Ts_simulation = np.arange(T)
+    burn_rate(burns, burns_BL, reimbursement_duration)
+
+    print(f"burns {np.shape(burns)}")
+    print(f"reimbursement_by_project {np.shape(reimbursement_by_project)}")
+    print(f"spend_by_project {np.shape(spend_by_project)}")
+    print(f"proj_types {np.shape(proj_types)}")
+
+    # REPLACE burns WITH reimbursement_types, spend_types
+    types = list(range(3))  # ***** REPLACE WITH ACTUAL NUMBER OF TYPES *****
+    burns_types = np.zeros((len(types), T))
+    for typ in types:
+        burns_types[typ] = burns[proj_types == typ].sum(axis=0)
+
+    reimbursement_types = np.array(
+        [reimbursement_by_project[proj_types == typ].sum(axis=0) for typ in types]
+    )
+    spend_types = np.array(
+        [spend_by_project[proj_types == typ].sum(axis=0) for typ in types]
+    )
+
+    time_marker = future_T_reimbursement_delay[0]
+
+    # Animated / accumulated plots
+    if plot_individual_projects:
+        png_path = make_project_activity_animation(
+            Ts_simulation,
+            burns,
+            burns_BL,
+            T,
+            time_marker,
+            animate=False,
+            reimbursement_duration=d,
+            start_year=start_year,
+            closing_date=closing_date,
+        )
+    else:
+        png_path = make_project_activity_animation(
+            Ts_simulation,
+            reimbursement_types,
+            spend_types,
+            T,
+            time_marker,
+            animate=False,
+            reimbursement_duration=d,
+            start_year=start_year,
+        )
+
+    if is_debugging():
+        print("DEBUG MODE")
+        import matplotlib.image as mpimg
+
+        fig2, ax2 = plt.subplots(figsize=(9, 5))
+        img = mpimg.imread(png_path)
+        ax2.imshow(img)
+        ax2.axis("off")
+        plt.show()
+    else:
+        if col3 is not None:
+            with col3:
+                with st.spinner("Creating animation... please wait ⏳"):
+                    if plot_individual_projects:
+                        gif_path = make_project_activity_animation(
+                            Ts_simulation,
+                            burns,
+                            burns_BL,
+                            T,
+                            time_marker,
+                            animate=False,
+                            reimbursement_duration=d,
+                            start_year=start_year,
+                        )
+                    else:
+                        gif_path = make_project_activity_animation(
+                            Ts_simulation,
+                            burns_types,
+                            burns_types,
+                            T,
+                            time_marker,
+                            animate=False,
+                            reimbursement_duration=d,
+                            start_year=start_year,
+                            del_T_p_non_reimb=del_T_p_non_reimb,
+                        )
+                st.image(gif_path, use_column_width=True)
+        else:
+            with st.spinner("Creating animation... please wait ⏳"):
+                if plot_individual_projects:
+                    gif_path = make_project_activity_animation(
+                        Ts_simulation,
+                        burns,
+                        burns_BL,
+                        T,
+                        time_marker,
+                        animate=False,
+                        reimbursement_duration=d,
+                        start_year=start_year,
+                    )
+                else:
+                    gif_path = make_project_activity_animation(
+                        Ts_simulation,
+                        burns_types,
+                        burns_types,
+                        T,
+                        time_marker,
+                        animate=False,
+                        reimbursement_duration=d,
+                        start_year=start_year,
+                        del_T_p_non_reimb=del_T_p_non_reimb,
+                    )
+            st.image(gif_path, use_column_width=True)
+
+
+# ---------------------------------------------------------------------
+# Streamlit script entry point
+# ---------------------------------------------------------------------
+params = render_ui()
+
+if "run_sim" not in st.session_state:
+    st.session_state["run_sim"] = False
+
+if st.button("Run simulation"):
+    st.session_state["run_sim"] = True
+
+if st.session_state["run_sim"]:
+    run_simulation_and_plot(params)
