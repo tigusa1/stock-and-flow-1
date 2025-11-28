@@ -156,17 +156,16 @@ def render_ui():
             page_title="Cash Flow Simulator",
             layout="wide",
         )
-        st.markdown(
-            """
-        <style>
-        details > summary {
-          font-size: 2.5em !important;
-          font-weight: 600 !important;
-        }
-        </style>
-        """,
-            unsafe_allow_html=True,
-        )
+        # st.markdown(
+        #     """<style>
+         #   details > summary {
+         #   font-size: 2.5em !important;
+        #    font-weight: 600 !important;
+         #   }
+       #     </style>
+         #   """# ,
+         #    unsafe_allow_html=True,
+       #  )
 
         col1, col2, col3 = st.columns([1, 1, 3])
 
