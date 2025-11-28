@@ -60,212 +60,213 @@ def run_streamlit():
     # closing_date -= relativedelta(years=1)
     seed = 3
 
+    # === USE SAVED PARAMETERS OR DEFAULT VALUES ===
+    if is_debugging():
+        flag_use_saved = False
+        plot_individual_projects = False
+    else:
+        flag_use_saved = False
+        # flag_use_saved = st.toggle("Use saved values")
+        plot_individual_projects = st.toggle("Plot individual projects (requires several minutes)")
+
+    if flag_use_saved:
+        n_projects_yr_0 = 3400
+        cash_init_0 = 4100
+        max_award_0 = 1.0
+        n_months_0 = 24 + 24
+
+        reimbursement_duration_0 = 2
+        future_reimbursement_duration_0 = 2
+        T1_reimbursement_duration_0 = 6.0
+
+        p_non_reimb_0 = 10.0
+        del_p_non_reimb_0 = 0.0
+        del_T1_non_reimb_0 = 12.0
+
+        p_delayed_NOA_0 = 0.0
+        T1_NOA_0 = 100000
+        reduction_in_burn_rate_0 = 50.0
+        T1_reduction_in_burn_rate_0 = 4.0
+        idc_rate_0 = 55.0
+        idc_2_rate_0 = 55.0
+        T1_idc_2_rate_months_0 = 12
+    else:
+        n_projects_yr_0 = 3400
+        cash_init_0 = 4100
+        max_award_0 = 1.0
+        n_months_0 = 24
+        reimbursement_duration_0 = 2
+        future_reimbursement_duration_0 = 2
+        T1_reimbursement_duration_0 = 6.0
+        p_non_reimb_0 = 0.0
+        del_p_non_reimb_0 = 0.0
+        del_T1_non_reimb_0 = 0.0
+        p_delayed_NOA_0 = 0.0
+        T1_NOA_0 = 100000
+        reduction_in_burn_rate_0 = 100.0
+        T1_reduction_in_burn_rate_0 = 0.0
+        idc_rate_0 = 55.0
+        idc_2_rate_0 = 55.0
+        T1_idc_2_rate_months_0 = 0 # all time in weeks unless the variable name includes months
+
+    # === DEBUGGING: SMALL NUMBER OF PROJECTS, STREAMLIT: USE SLIDER VALUES ===
+    if is_debugging():
+        reimbursement_duration = 2
+        cash_init = 4100
+        n_projects = 20
+        max_award = 1.0 # $MM
+        max_award *= 1000  # convert to $K
+        new_awards_pct = 1.0
+
+        # decline_month = 10
+        # decline_factor = 50/100
+        # n_simulation_months = 36 + 12
+        # n_simulation_months = (2026 - start_year + 1) * 12 # until the end of 2026
+        # n_simulation_months = (2030 - start_year + 1) * 12 # until the end of 2030
+        p_non_reimb = 0.0
+        p_delayed_NOA = 0.0
+        del_T1_non_reimb = 0
+        del_p_non_reimb = 0.0
+        idc_rate = 0.55
+        T1_idc_2_rate_months = 0
+        idc_2_rate = idc_rate - 0.00
+        # === NEW SLIDERS ===
+        T1_NOA = 0.0
+        T1_reduction_in_burn_rate = 0.0
+        reduction_in_burn_rate = 0.0
+        T1_reimbursement_duration = 0.0
+        future_reimbursement_duration = 2
+
+        # === NEW PARAMETERS ===
+        # P_start, P_end, P_duration disregarded if Excel file data is read, P_start is set to 0
+        P_start = 0 # in weeks
+        P_end = 52 * 2
+        P_duration = 5 # not used if projects are read
+    else:
+        st.set_page_config(
+            page_title="Cash Flow Simulator",
+            layout="wide"
+        )
+        # GLOBAL STYLE OVERRIDES
+        st.markdown("""
+        <style>
+        details > summary {
+          font-size: 2.5em !important;
+          font-weight: 600 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns([1, 1, 3])  # adjust width ratio if needed
+        with col1:
+            with st.expander("Basic Settings", expanded=True):
+                cash_init  = st.slider("Initial cash balance ($MM)",    0, 8000, cash_init_0, step=100)
+                cash_init *= 1000
+                # n_projects = st.slider("Number of Projects",    2, 80, 2, step=5) # v2
+                # max_award  = st.slider("Max Award Amount (yearly, $100MM)",      0.1,  2.0,  1.0, step=0.1)
+                # max_award *= 1000*100/100 # convert to $K
+                # n_projects = st.slider("Number of Projects",    5, 80, 45, step=5)
+                # max_award *= 1000*10 # convert to $K
+                # n_simulation_months = st.slider("Simulation duration (months)", 2, 4, 2, help=".")
+                # DISABLE SLIDERS
+                n_projects_yr = n_projects_yr_0
+                max_award = max_award_0
+                # n_projects_yr = st.slider("Number of projects per year (1000s)", 1000, 5000, n_projects_yr_0, step=100)
+                # max_award  = st.slider("Average award ($MM/year)",      0.1,  2.0,  max_award_0, step=0.1)
+                max_award *= 1000 # convert to $K
+                start_year = st.slider("Start year", 2018, 2026, start_year, 1)
+                end_year = st.slider("End year", 2025, 2030, end_year, 1)
+                # n_simulation_months = st.slider("Simulation duration (months)", 24, 84, n_months_0, 3,
+                #                                 help=".")
+                n_simulation_months = (end_year - start_year + 1) * 12 - 1
+
+        with col2:
+            with st.expander("Projected New Awards", expanded=True):
+                new_awards_pct = st.slider("New awards (percent of historical award rate)", 0., 150., 100., 5.) / 100.
+
+            with st.expander("Reimbursement Delays", expanded=True):
+                reimbursement_duration = st.slider("Current delay (weeks)", 1, 10, reimbursement_duration_0)
+                future_reimbursement_duration = st.slider("Future delay (weeks)", 1, 10, future_reimbursement_duration_0)
+                T1_reimbursement_duration = st.slider("Time of future delay (months)",
+                                             0.0, 12.0, T1_reimbursement_duration_0, 1.0) * 52 / 12 + \
+                                             reimbursement_duration
+
+        # PROJECTS
+        with col1:
+            # st.markdown("#### Award information")  # renders like st.subheader
+
+            # with st.expander("ℹ️ Summary of simulation procedure"):
+            #     st.markdown("""
+            #     A series of projects are simulated as follows:
+            #     - The **total number** of projects is set by the *1st slider*.
+            #     - **Durations** are uniformly distributed from 12 to 36 months.
+            #     - The average **burn rate** is $100,000 per month.
+            #     - **Burn rate shapes** are set by the *dropdown menu* below.
+            #     - The **simulation display** begins at time 0 (months), occurring after some of the projects
+            #       have started. The simulation **end time** is set by the *4th slider* below.
+            #     - Project **start times** are uniformly distributed starting 36 months prior to
+            #       time 0 until the simulation end time.
+            #
+            #     A decrease in award amounts is simulated as follows:
+            #     - The *2nd slider* below sets the **month at which all awards with subsequent start times** have
+            #       reduced award amounts.
+            #     - The **reduced award amount**, specified as a percent of the original award amount,
+            #       is specified by the *3rd slider* below.
+            #     """)
+            #
+            # with st.expander("ℹ️ Future possible developments in the simulator"):
+            #     st.markdown("""
+            #     This basic simulator can be further developed in several ways:
+            #     - Insert **actual awards**.  Tens of thousands can be added.  The charts can be modified
+            #       to display **categories of awards** (e.g., grants, contracts, subawards) instead of
+            #       individual awards.
+            #     - Display the **projected trends** described in VP Heller's email.
+            #     - Use **probability of award termination** instead of declining award amounts.
+            #     - Convert awards to **equivalent flows**.
+            #     - Include **endogenous feedback**, such as the effects of reduced spending on
+            #       staff/faculty (through RIF) on future awards.
+            #     """)
+            #
+            with st.expander("Pending Projects That Are Not Awarded (use start year = 2022 to see long-term effects)", expanded=True):
+                p_non_reimb = st.slider("Current probability (%)", 0.0, 25., p_non_reimb_0, 1.0) / 100
+                del_p_non_reimb = st.slider("Future change in probability (%)",
+                                            0.0, 75.0, del_p_non_reimb_0, 1.0) / 100
+                del_T1_non_reimb = st.slider("Time of probability change (months)",
+                                             0.0, 12.0, del_T1_non_reimb_0, 1.0) * 52 / 12 + \
+                    reimbursement_duration
+
+            with st.expander("Reduced Expenditures of Pending Projects", expanded=True):
+                reduction_in_burn_rate = st.slider("Reduced spending rate (< 100%)",
+                                                   0.0, 100.0, reduction_in_burn_rate_0, 1.0) / 100
+                T1_reduction_in_burn_rate = st.slider("Time of reduced spending (months)",
+                                                      0.0, 12.0, T1_reduction_in_burn_rate_0, 1.0) * 52 / 12 + \
+                    reimbursement_duration
+
+            # DON'T USE SLIDERS HERE, JUST USE DEFAULT VALUE
+            p_delayed_NOA = p_delayed_NOA_0
+            T1_NOA = T1_NOA_0
+
+            # with st.expander("Delays in NOA", expanded=True):
+            #     p_delayed_NOA = st.slider("Probability of delayed NOA", 0.0, 100.0, p_delayed_NOA_0, 1.0) / 100
+            #     T1_NOA = st.slider("Delay in NOA (months)", 0.0, 12.0, T1_NOA_0, 0.5) * 52 / 12
+            #     reduction_in_burn_rate = st.slider("Reduced spending rate (< 100%) due to delayed NOA (%)",
+            #                                        0.0, 100.0, reduction_in_burn_rate_0, 1.0) / 100
+            #     T1_reduction_in_burn_rate = st.slider("Time of reduced spending (months)",
+            #                                           0.0, 12.0, T1_reduction_in_burn_rate_0, 0.5) * 52 / 12 + \
+            #                                 reimbursement_duration
+
+        with col2:
+            with st.expander("IDC", expanded=True):
+                idc_rate = st.slider("Current IDC (%)", 0.0, 80.0, idc_rate_0, 0.5) / 100
+                idc_2_rate = st.slider("Revised IDC (%)", 0.0, 80.0, idc_2_rate_0, 0.5) / 100
+                T1_idc_2_rate_months = st.slider("Time of revised IDC (months)", 0, 50, T1_idc_2_rate_months_0, 1)
+
+        P_start = -52 + 52*0 # use 0 for debugging and testing
+        P_duration = 52
+        n_projects = round(n_projects_yr / 12 * (n_simulation_months - P_start * 12 / 52 - P_duration * 12 / 52))
+        print(f"n_projects: {n_projects}")
+
     if st.button("Run simulation"):
-        # === USE SAVED PARAMETERS OR DEFAULT VALUES ===
-        if is_debugging():
-            flag_use_saved = False
-            plot_individual_projects = False
-        else:
-            flag_use_saved = False
-            # flag_use_saved = st.toggle("Use saved values")
-            plot_individual_projects = st.toggle("Plot individual projects (requires several minutes)")
-
-        if flag_use_saved:
-            n_projects_yr_0 = 3400
-            cash_init_0 = 4100
-            max_award_0 = 1.0
-            n_months_0 = 24 + 24
-
-            reimbursement_duration_0 = 2
-            future_reimbursement_duration_0 = 2
-            T1_reimbursement_duration_0 = 6.0
-
-            p_non_reimb_0 = 10.0
-            del_p_non_reimb_0 = 0.0
-            del_T1_non_reimb_0 = 12.0
-
-            p_delayed_NOA_0 = 0.0
-            T1_NOA_0 = 100000
-            reduction_in_burn_rate_0 = 50.0
-            T1_reduction_in_burn_rate_0 = 4.0
-            idc_rate_0 = 55.0
-            idc_2_rate_0 = 55.0
-            T1_idc_2_rate_months_0 = 12
-        else:
-            n_projects_yr_0 = 3400
-            cash_init_0 = 4100
-            max_award_0 = 1.0
-            n_months_0 = 24
-            reimbursement_duration_0 = 2
-            future_reimbursement_duration_0 = 2
-            T1_reimbursement_duration_0 = 6.0
-            p_non_reimb_0 = 0.0
-            del_p_non_reimb_0 = 0.0
-            del_T1_non_reimb_0 = 0.0
-            p_delayed_NOA_0 = 0.0
-            T1_NOA_0 = 100000
-            reduction_in_burn_rate_0 = 100.0
-            T1_reduction_in_burn_rate_0 = 0.0
-            idc_rate_0 = 55.0
-            idc_2_rate_0 = 55.0
-            T1_idc_2_rate_months_0 = 0 # all time in weeks unless the variable name includes months
-
-        # === DEBUGGING: SMALL NUMBER OF PROJECTS, STREAMLIT: USE SLIDER VALUES ===
-        if is_debugging():
-            reimbursement_duration = 2
-            cash_init = 4100
-            n_projects = 20
-            max_award = 1.0 # $MM
-            max_award *= 1000  # convert to $K
-            new_awards_pct = 1.0
-
-            # decline_month = 10
-            # decline_factor = 50/100
-            # n_simulation_months = 36 + 12
-            # n_simulation_months = (2026 - start_year + 1) * 12 # until the end of 2026
-            # n_simulation_months = (2030 - start_year + 1) * 12 # until the end of 2030
-            p_non_reimb = 0.0
-            p_delayed_NOA = 0.0
-            del_T1_non_reimb = 0
-            del_p_non_reimb = 0.0
-            idc_rate = 0.55
-            T1_idc_2_rate_months = 0
-            idc_2_rate = idc_rate - 0.00
-            # === NEW SLIDERS ===
-            T1_NOA = 0.0
-            T1_reduction_in_burn_rate = 0.0
-            reduction_in_burn_rate = 0.0
-            T1_reimbursement_duration = 0.0
-            future_reimbursement_duration = 2
-
-            # === NEW PARAMETERS ===
-            # P_start, P_end, P_duration disregarded if Excel file data is read, P_start is set to 0
-            P_start = 0 # in weeks
-            P_end = 52 * 2
-            P_duration = 5 # not used if projects are read
-        else:
-            st.set_page_config(
-                page_title="Cash Flow Simulator",
-                layout="wide"
-            )
-            # GLOBAL STYLE OVERRIDES
-            st.markdown("""
-            <style>
-            details > summary {
-              font-size: 2.5em !important;
-              font-weight: 600 !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
-            col1, col2, col3 = st.columns([1, 1, 3])  # adjust width ratio if needed
-            with col1:
-                with st.expander("Basic Settings", expanded=True):
-                    cash_init  = st.slider("Initial cash balance ($MM)",    0, 8000, cash_init_0, step=100)
-                    cash_init *= 1000
-                    # n_projects = st.slider("Number of Projects",    2, 80, 2, step=5) # v2
-                    # max_award  = st.slider("Max Award Amount (yearly, $100MM)",      0.1,  2.0,  1.0, step=0.1)
-                    # max_award *= 1000*100/100 # convert to $K
-                    # n_projects = st.slider("Number of Projects",    5, 80, 45, step=5)
-                    # max_award *= 1000*10 # convert to $K
-                    # n_simulation_months = st.slider("Simulation duration (months)", 2, 4, 2, help=".")
-                    # DISABLE SLIDERS
-                    n_projects_yr = n_projects_yr_0
-                    max_award = max_award_0
-                    # n_projects_yr = st.slider("Number of projects per year (1000s)", 1000, 5000, n_projects_yr_0, step=100)
-                    # max_award  = st.slider("Average award ($MM/year)",      0.1,  2.0,  max_award_0, step=0.1)
-                    max_award *= 1000 # convert to $K
-                    start_year = st.slider("Start year", 2018, 2026, start_year, 1)
-                    end_year = st.slider("End year", 2025, 2030, end_year, 1)
-                    # n_simulation_months = st.slider("Simulation duration (months)", 24, 84, n_months_0, 3,
-                    #                                 help=".")
-                    n_simulation_months = (end_year - start_year + 1) * 12 - 1
-
-            with col2:
-                with st.expander("Projected New Awards", expanded=True):
-                    new_awards_pct = st.slider("New awards (percent of historical award rate)", 0., 150., 100., 5.) / 100.
-
-                with st.expander("Reimbursement Delays", expanded=True):
-                    reimbursement_duration = st.slider("Current delay (weeks)", 1, 10, reimbursement_duration_0)
-                    future_reimbursement_duration = st.slider("Future delay (weeks)", 1, 10, future_reimbursement_duration_0)
-                    T1_reimbursement_duration = st.slider("Time of future delay (months)",
-                                                 0.0, 12.0, T1_reimbursement_duration_0, 1.0) * 52 / 12 + \
-                                                 reimbursement_duration
-
-            # PROJECTS
-            with col1:
-                # st.markdown("#### Award information")  # renders like st.subheader
-
-                # with st.expander("ℹ️ Summary of simulation procedure"):
-                #     st.markdown("""
-                #     A series of projects are simulated as follows:
-                #     - The **total number** of projects is set by the *1st slider*.
-                #     - **Durations** are uniformly distributed from 12 to 36 months.
-                #     - The average **burn rate** is $100,000 per month.
-                #     - **Burn rate shapes** are set by the *dropdown menu* below.
-                #     - The **simulation display** begins at time 0 (months), occurring after some of the projects
-                #       have started. The simulation **end time** is set by the *4th slider* below.
-                #     - Project **start times** are uniformly distributed starting 36 months prior to
-                #       time 0 until the simulation end time.
-                #
-                #     A decrease in award amounts is simulated as follows:
-                #     - The *2nd slider* below sets the **month at which all awards with subsequent start times** have
-                #       reduced award amounts.
-                #     - The **reduced award amount**, specified as a percent of the original award amount,
-                #       is specified by the *3rd slider* below.
-                #     """)
-                #
-                # with st.expander("ℹ️ Future possible developments in the simulator"):
-                #     st.markdown("""
-                #     This basic simulator can be further developed in several ways:
-                #     - Insert **actual awards**.  Tens of thousands can be added.  The charts can be modified
-                #       to display **categories of awards** (e.g., grants, contracts, subawards) instead of
-                #       individual awards.
-                #     - Display the **projected trends** described in VP Heller's email.
-                #     - Use **probability of award termination** instead of declining award amounts.
-                #     - Convert awards to **equivalent flows**.
-                #     - Include **endogenous feedback**, such as the effects of reduced spending on
-                #       staff/faculty (through RIF) on future awards.
-                #     """)
-                #
-                with st.expander("Pending Projects That Are Not Awarded (use start year = 2022 to see long-term effects)", expanded=True):
-                    p_non_reimb = st.slider("Current probability (%)", 0.0, 25., p_non_reimb_0, 1.0) / 100
-                    del_p_non_reimb = st.slider("Future change in probability (%)",
-                                                0.0, 75.0, del_p_non_reimb_0, 1.0) / 100
-                    del_T1_non_reimb = st.slider("Time of probability change (months)",
-                                                 0.0, 12.0, del_T1_non_reimb_0, 1.0) * 52 / 12 + \
-                        reimbursement_duration
-
-                with st.expander("Reduced Expenditures of Pending Projects", expanded=True):
-                    reduction_in_burn_rate = st.slider("Reduced spending rate (< 100%)",
-                                                       0.0, 100.0, reduction_in_burn_rate_0, 1.0) / 100
-                    T1_reduction_in_burn_rate = st.slider("Time of reduced spending (months)",
-                                                          0.0, 12.0, T1_reduction_in_burn_rate_0, 1.0) * 52 / 12 + \
-                        reimbursement_duration
-
-                # DON'T USE SLIDERS HERE, JUST USE DEFAULT VALUE
-                p_delayed_NOA = p_delayed_NOA_0
-                T1_NOA = T1_NOA_0
-
-                # with st.expander("Delays in NOA", expanded=True):
-                #     p_delayed_NOA = st.slider("Probability of delayed NOA", 0.0, 100.0, p_delayed_NOA_0, 1.0) / 100
-                #     T1_NOA = st.slider("Delay in NOA (months)", 0.0, 12.0, T1_NOA_0, 0.5) * 52 / 12
-                #     reduction_in_burn_rate = st.slider("Reduced spending rate (< 100%) due to delayed NOA (%)",
-                #                                        0.0, 100.0, reduction_in_burn_rate_0, 1.0) / 100
-                #     T1_reduction_in_burn_rate = st.slider("Time of reduced spending (months)",
-                #                                           0.0, 12.0, T1_reduction_in_burn_rate_0, 0.5) * 52 / 12 + \
-                #                                 reimbursement_duration
-
-            with col2:
-                with st.expander("IDC", expanded=True):
-                    idc_rate = st.slider("Current IDC (%)", 0.0, 80.0, idc_rate_0, 0.5) / 100
-                    idc_2_rate = st.slider("Revised IDC (%)", 0.0, 80.0, idc_2_rate_0, 0.5) / 100
-                    T1_idc_2_rate_months = st.slider("Time of revised IDC (months)", 0, 50, T1_idc_2_rate_months_0, 1)
-
-            P_start = -52 + 52*0 # use 0 for debugging and testing
-            P_duration = 52
-            n_projects = round(n_projects_yr / 12 * (n_simulation_months - P_start * 12 / 52 - P_duration * 12 / 52))
-            print(f"n_projects: {n_projects}")
 
         T1_idc_2_rate = T1_idc_2_rate_months * 52 / 12 + reimbursement_duration
         del_T_p_non_reimb = (del_T1_non_reimb, del_p_non_reimb)
