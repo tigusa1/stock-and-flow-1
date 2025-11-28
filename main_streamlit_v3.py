@@ -49,7 +49,7 @@ def show_fig(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     buf.seek(0)
-    st.image(buf, use_column_width=True)
+    st.image(buf, use_container_width=True)
     plt.close(fig)
 
 
