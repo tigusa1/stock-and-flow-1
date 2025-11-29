@@ -499,17 +499,32 @@ def run_simulation_and_capture(params):
                 start_year=start_year,
             )
 
-    # Convert main fig to PNG bytes
     fig_buf = io.BytesIO()
     fig.savefig(fig_buf, format="png", dpi=150, bbox_inches="tight")
-    fig_buf.seek(0)
-    fig_bytes = fig_buf.getvalue()
+    fig_bytes = fig_buf.getvalue()  # <-- extract raw bytes
     plt.close(fig)
 
-    # Convert animation PNG buffer to raw bytes
-    png_bytes = png_or_buf.getvalue() if hasattr(png_or_buf, "getvalue") else png_or_buf
+    # png_or_buf may be BytesIO or str; so normalize it:
+    if hasattr(png_or_buf, "getvalue"):
+        png_bytes = png_or_buf.getvalue()
+    else:
+        with open(png_or_buf, "rb") as f:
+            png_bytes = f.read()
 
     return fig_bytes, png_bytes
+
+    # Convert main fig to PNG bytes
+    # fig_buf = io.BytesIO()
+    # fig.savefig(fig_buf, format="png", dpi=150, bbox_inches="tight")
+    # fig_buf.seek(0)
+    # fig_bytes = fig_buf.getvalue()
+    # plt.close(fig)
+    #
+    # # Convert animation PNG buffer to raw bytes
+    # png_bytes = png_or_buf.getvalue() if hasattr(png_or_buf, "getvalue") else png_or_buf
+    #
+    # return fig_bytes, png_bytes
+
 
 # ---------------------------------------------------------------------
 # Streamlit script entry point
@@ -540,20 +555,14 @@ if st.session_state["run_sim"]:
 if st.session_state.get("last_fig") is not None:
     if col3 is not None:
         with col3:
-            st.image(st.session_state["last_fig"], use_container_width=True)
+            buf = io.BytesIO(st.session_state["last_fig"])
+            st.image(buf, use_container_width=True)
+            # st.image(st.session_state["last_fig"], use_container_width=True)
 
 if st.session_state.get("last_png") is not None:
     if col3 is not None:
         with col3:
-            st.image(st.session_state["last_png"], use_container_width=True)
-
-
-
-
-
-
-
-
-
-
+            buf2 = io.BytesIO(st.session_state["last_png"])
+            st.image(buf2, use_container_width=True)
+            # st.image(st.session_state["last_png"], use_container_width=True)
 
