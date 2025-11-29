@@ -44,7 +44,7 @@ def show_fig(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     buf.seek(0)
-    st.image(buf, use_column_width=True)
+    st.image(buf, use_container_width=True)
     plt.close(fig)
 
 
@@ -105,8 +105,9 @@ def render_ui():
         layout="wide",
     )
 
-    col1, col2, col3 = st.columns([1, 1, 3])
+    st.title("Cash Flow Simulation Dashboard")
 
+    col1, col2, col3 = st.columns([1, 1, 3])
     # -----------------------------------------------------------------
     # BASIC SETTINGS
     # -----------------------------------------------------------------
@@ -277,7 +278,7 @@ def render_ui():
 # ---------------------------------------------------------------------
 # Simulation + plotting function
 # ---------------------------------------------------------------------
-def run_simulation_and_plot(params):
+def run_simulation_and_capture(params):
 
     start_year = params["start_year"]
     end_year = params["end_year"]
@@ -499,26 +500,55 @@ def run_simulation_and_plot(params):
             )
 
     # THIS LINE FIXES THE BROKEN IMAGE ISSUE
-    st.image(png_or_buf, use_column_width=True)
+    # st.image(png_or_buf, use_container_width=True)
+    return fig, png_or_buf  # or gif_path if that's what you’re using
 
 # ---------------------------------------------------------------------
 # Streamlit script entry point
 # ---------------------------------------------------------------------
-
 # Build UI and get parameters
+# Initialize session flag to control simulation execution
 params = render_ui()
 
-# Initialize session flag to control simulation execution
 if "run_sim" not in st.session_state:
     st.session_state["run_sim"] = False
+if "last_fig" not in st.session_state:
+    st.session_state["last_fig"] = None
+if "last_png" not in st.session_state:
+    st.session_state["last_png"] = None
 
-# Run simulation only when the button is clicked
+# Clicking the button triggers a new simulation
 if st.button("Run simulation"):
     st.session_state["run_sim"] = True
 
-# After clicking the button, run the simulation once
 if st.session_state["run_sim"]:
-    run_simulation_and_plot(params)
+    fig, png_or_buf = run_simulation_and_capture(params)
+    st.session_state["last_fig"] = fig
+    st.session_state["last_png"] = png_or_buf
+    # Once results are stored, we can turn run_sim off so sliders don't auto-run
+    st.session_state["run_sim"] = False
+
+# Always display the most recent results (if any)
+if st.session_state["last_fig"] is not None:
+    # Render the figure via BytesIO
+    buf = io.BytesIO()
+    st.session_state["last_fig"].savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    buf.seek(0)
+    st.image(buf, use_container_width=True)
+
+if st.session_state["last_png"] is not None:
+    st.image(st.session_state["last_png"], use_container_width=True)
+
+# if "run_sim" not in st.session_state:
+#     st.session_state["run_sim"] = False
+#
+# # Run simulation only when the button is clicked
+# if st.button("Run simulation"):
+#     st.session_state["run_sim"] = True
+#
+# # After clicking the button, run the simulation once
+# if st.session_state["run_sim"]:
+#     run_simulation_and_capture(params)
 
 
 
