@@ -1,1 +1,1 @@
-web: streamlit run main_streamlit_v3.py --server.port 8080 --server.address 0.0.0.0
+web: streamlit run simple_test.py --server.address=0.0.0.0 --server.port=$PORT --server.enableCORS=false --server.enableXsrfProtection=false --server.fileWatcherType=none --server.maxMessageSize=1000
