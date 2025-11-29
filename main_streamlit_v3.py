@@ -105,7 +105,7 @@ def render_ui():
         layout="wide",
     )
 
-    st.title("Cash Flow Simulation Dashboard 8:41 am")
+    st.title("Cash Flow Simulation Dashboard 9:09 am")
 
     col1, col2, col3 = st.columns([1, 1, 3])
     # -----------------------------------------------------------------
@@ -445,13 +445,13 @@ def run_simulation_and_capture(params):
         ax.grid(True)
 
     # Display figure
-    if col3 is not None:
-        with col3:
-            fig.tight_layout()
-            show_fig(fig)
-    else:
-        fig.tight_layout()
-        show_fig(fig)
+    # if col3 is not None:
+    #     with col3:
+    #         fig.tight_layout()
+    #         show_fig(fig)
+    # else:
+    #     fig.tight_layout()
+    #     show_fig(fig)
 
     # -----------------------------
     # BREAKDOWN BY TYPE
@@ -499,15 +499,17 @@ def run_simulation_and_capture(params):
                 start_year=start_year,
             )
 
-    # THIS LINE FIXES THE BROKEN IMAGE ISSUE
-    # st.image(png_or_buf, use_container_width=True)
-    # Convert the main figure to PNG bytes
+    # Convert main fig to PNG bytes
     fig_buf = io.BytesIO()
     fig.savefig(fig_buf, format="png", dpi=150, bbox_inches="tight")
     fig_buf.seek(0)
+    fig_bytes = fig_buf.getvalue()
+    plt.close(fig)
 
-    # Return byte buffers, not figure objects
-    return fig_buf, png_or_buf
+    # Convert animation PNG buffer to raw bytes
+    png_bytes = png_or_buf.getvalue() if hasattr(png_or_buf, "getvalue") else png_or_buf
+
+    return fig_bytes, png_bytes
 
 # ---------------------------------------------------------------------
 # Streamlit script entry point
@@ -515,6 +517,7 @@ def run_simulation_and_capture(params):
 # Build UI and get parameters
 # Initialize session flag to control simulation execution
 params = render_ui()
+col3 = params["col3"]
 
 if "run_sim" not in st.session_state:
     st.session_state["run_sim"] = False
@@ -528,35 +531,21 @@ if st.button("Run simulation"):
     st.session_state["run_sim"] = True
 
 if st.session_state["run_sim"]:
-    fig_buf, png_or_buf = run_simulation_and_capture(params)
-    st.session_state["last_fig"] = fig_buf
-    st.session_state["last_png"] = png_or_buf
-    # Once results are stored, we can turn run_sim off so sliders don't auto-run
+    fig_bytes, png_bytes = run_simulation_and_capture(params)
+    st.session_state["last_fig"] = fig_bytes
+    st.session_state["last_png"] = png_bytes
     st.session_state["run_sim"] = False
 
 # Always display the most recent results (if any)
-if st.session_state["last_fig"] is not None:
-    st.image(st.session_state["last_fig"], use_column_width=True)
-    # Render the figure via BytesIO
-    # buf = io.BytesIO()
-    # st.session_state["last_fig"].savefig(buf, format="png", dpi=150, bbox_inches="tight")
-    # buf.seek(0)
-    # st.image(buf, use_container_width=True)
+if st.session_state.get("last_fig") is not None:
+    if col3 is not None:
+        with col3:
+            st.image(st.session_state["last_fig"], use_container_width=True)
 
-if st.session_state["last_png"] is not None:
-    st.image(st.session_state["last_png"], use_container_width=True)
-
-# if "run_sim" not in st.session_state:
-#     st.session_state["run_sim"] = False
-#
-# # Run simulation only when the button is clicked
-# if st.button("Run simulation"):
-#     st.session_state["run_sim"] = True
-#
-# # After clicking the button, run the simulation once
-# if st.session_state["run_sim"]:
-#     run_simulation_and_capture(params)
-
+if st.session_state.get("last_png") is not None:
+    if col3 is not None:
+        with col3:
+            st.image(st.session_state["last_png"], use_container_width=True)
 
 
 
