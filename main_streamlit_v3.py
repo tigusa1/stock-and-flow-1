@@ -275,6 +275,7 @@ def render_ui():
         P_duration=P_duration,
         col3=col3,
     )
+
 # ---------------------------------------------------------------------
 # Simulation + plotting function
 # ---------------------------------------------------------------------
@@ -512,19 +513,6 @@ def run_simulation_and_capture(params):
             png_bytes = f.read()
 
     return fig_bytes, png_bytes
-
-    # Convert main fig to PNG bytes
-    # fig_buf = io.BytesIO()
-    # fig.savefig(fig_buf, format="png", dpi=150, bbox_inches="tight")
-    # fig_buf.seek(0)
-    # fig_bytes = fig_buf.getvalue()
-    # plt.close(fig)
-    #
-    # # Convert animation PNG buffer to raw bytes
-    # png_bytes = png_or_buf.getvalue() if hasattr(png_or_buf, "getvalue") else png_or_buf
-    #
-    # return fig_bytes, png_bytes
-
 
 # ---------------------------------------------------------------------
 # Streamlit script entry point
