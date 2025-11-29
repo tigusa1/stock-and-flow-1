@@ -501,7 +501,13 @@ def run_simulation_and_capture(params):
 
     # THIS LINE FIXES THE BROKEN IMAGE ISSUE
     # st.image(png_or_buf, use_container_width=True)
-    return fig, png_or_buf  # or gif_path if that's what you’re using
+    # Convert the main figure to PNG bytes
+    fig_buf = io.BytesIO()
+    fig.savefig(fig_buf, format="png", dpi=150, bbox_inches="tight")
+    fig_buf.seek(0)
+
+    # Return byte buffers, not figure objects
+    return fig_buf, png_or_buf
 
 # ---------------------------------------------------------------------
 # Streamlit script entry point
@@ -522,19 +528,20 @@ if st.button("Run simulation"):
     st.session_state["run_sim"] = True
 
 if st.session_state["run_sim"]:
-    fig, png_or_buf = run_simulation_and_capture(params)
-    st.session_state["last_fig"] = fig
+    fig_buf, png_or_buf = run_simulation_and_capture(params)
+    st.session_state["last_fig"] = fig_buf
     st.session_state["last_png"] = png_or_buf
     # Once results are stored, we can turn run_sim off so sliders don't auto-run
     st.session_state["run_sim"] = False
 
 # Always display the most recent results (if any)
 if st.session_state["last_fig"] is not None:
+    st.image(st.session_state["last_fig"], use_column_width=True)
     # Render the figure via BytesIO
-    buf = io.BytesIO()
-    st.session_state["last_fig"].savefig(buf, format="png", dpi=150, bbox_inches="tight")
-    buf.seek(0)
-    st.image(buf, use_container_width=True)
+    # buf = io.BytesIO()
+    # st.session_state["last_fig"].savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    # buf.seek(0)
+    # st.image(buf, use_container_width=True)
 
 if st.session_state["last_png"] is not None:
     st.image(st.session_state["last_png"], use_container_width=True)
