@@ -105,7 +105,7 @@ def render_ui():
         layout="wide",
     )
 
-    st.title("Cash Flow Simulation Dashboard")
+    st.title("Cash Flow Simulation Dashboard 8:41 am")
 
     col1, col2, col3 = st.columns([1, 1, 3])
     # -----------------------------------------------------------------
