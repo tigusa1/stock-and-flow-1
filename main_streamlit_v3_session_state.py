@@ -57,7 +57,7 @@ def show_fig(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     buf.seek(0)
-    st.image(buf, width='stretch')
+    st.image(buf, use_container_width=True)
     plt.close(fig)
 
 
@@ -294,8 +294,10 @@ def render_ui():
 # ---------------------------------------------------------------------
 import json
 
-# @st.cache_data
-def run_simulation_and_capture(params):
+@st.cache_data
+def run_simulation_and_capture(params_json):
+    params = json.loads(params_json)
+
     start_year = params["start_year"]
     end_year = params["end_year"]
     n_simulation_months = params["n_simulation_months"]
@@ -460,13 +462,14 @@ def run_simulation_and_capture(params):
             ax.legend()
         ax.grid(True)
 
-    if col3 is not None:
-        with col3:
-            fig.tight_layout()
-            show_fig(fig)
-    else:
-        fig.tight_layout()
-        show_fig(fig)
+    # Display figure
+    # if col3 is not None:
+    #     with col3:
+    #         fig.tight_layout()
+    #         show_fig(fig)
+    # else:
+    #     fig.tight_layout()
+    #     show_fig(fig)
 
     # -----------------------------
     # BREAKDOWN BY TYPE
@@ -489,30 +492,30 @@ def run_simulation_and_capture(params):
     # -----------------------------
     # STATIC "ANIMATION" PLOT (PNG)
     # -----------------------------
-    # with st.spinner("Creating animation... please wait ⏳"):
-    if plot_individual_projects:
-        png_or_buf = make_project_activity_animation(
-            Ts_simulation,
-            burns,
-            burns_BL,
-            T,
-            time_marker,
-            animate=False,
-            reimbursement_duration=d,
-            start_year=start_year,
-            closing_date=closing_date,
-        )
-    else:
-        png_or_buf = make_project_activity_animation(
-            Ts_simulation,
-            reimbursement_types,
-            spend_types,
-            T,
-            time_marker,
-            animate=False,
-            reimbursement_duration=d,
-            start_year=start_year,
-        )
+    with st.spinner("Creating animation... please wait ⏳"):
+        if plot_individual_projects:
+            png_or_buf = make_project_activity_animation(
+                Ts_simulation,
+                burns,
+                burns_BL,
+                T,
+                time_marker,
+                animate=False,
+                reimbursement_duration=d,
+                start_year=start_year,
+                closing_date=closing_date,
+            )
+        else:
+            png_or_buf = make_project_activity_animation(
+                Ts_simulation,
+                reimbursement_types,
+                spend_types,
+                T,
+                time_marker,
+                animate=False,
+                reimbursement_duration=d,
+                start_year=start_year,
+            )
 
     fig_buf = io.BytesIO()
     fig.savefig(fig_buf, format="png", dpi=150, bbox_inches="tight")
@@ -533,50 +536,40 @@ def run_simulation_and_capture(params):
 # ---------------------------------------------------------------------
 # Build UI and get parameters
 # Initialize session flag to control simulation execution
-st.write("BEGIN")
 params = render_ui()
 col3 = params["col3"]
 
 if "run_sim" not in st.session_state:
-    st.write("run_sim not set")
     st.session_state["run_sim"] = False
 if "last_fig" not in st.session_state:
-    st.write("last_fig not set")
     st.session_state["last_fig"] = None
 if "last_png" not in st.session_state:
-    st.write("last_png not set")
     st.session_state["last_png"] = None
 
 # Clicking the button triggers a new simulation
 if st.button("Run simulation"):
-    st.write("Run simulation button pressed")
     st.session_state["run_sim"] = True
 
 if st.session_state["run_sim"]:
-    st.write("run_sim session_state is True")
-    # params_json = json.dumps(params, sort_keys=True, default=str)
+    params_json = json.dumps(params, sort_keys=True, default=str)
 
-    fig_bytes, png_bytes = run_simulation_and_capture(params)
-    st.write("finished run_simulation_and_capture")
+    fig_bytes, png_bytes = run_simulation_and_capture(params_json)
     st.session_state["last_fig"] = fig_bytes
     st.session_state["last_png"] = png_bytes
     st.session_state["run_sim"] = False
-    st.write("  set run_sim session_state to False")
 
 # Always display the most recent results (if any)
 if st.session_state.get("last_fig") is not None:
-    st.write("last_fig session_state is not None")
     if col3 is not None:
         with col3:
             buf = io.BytesIO(st.session_state["last_fig"])
-            st.image(buf, width='stretch')
-            # st.image(st.session_state["last_fig"], width='stretch')
+            st.image(buf, use_container_width=True)
+            # st.image(st.session_state["last_fig"], use_container_width=True)
 
 if st.session_state.get("last_png") is not None:
-    st.write("last_png session_state is not None")
     if col3 is not None:
         with col3:
             buf2 = io.BytesIO(st.session_state["last_png"])
-            st.image(buf2, width='stretch')
-            # st.image(st.session_state["last_png"], width='stretch')
+            st.image(buf2, use_container_width=True)
+            # st.image(st.session_state["last_png"], use_container_width=True)
 

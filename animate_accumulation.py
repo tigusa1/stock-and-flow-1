@@ -7,6 +7,8 @@ import datetime
 import calendar
 import pandas as pd
 
+import streamlit as st
+
 def months_between(start, end):
     # whole months
     months = (end.year - start.year) * 12 + (end.month - start.month)
@@ -86,6 +88,7 @@ def burn_rate(burns, burns_BL, reimbursement_duration, save_Excel = True):
 
     return burns, burns_BL, total_final, total_BL_final
 
+@st.cache_data
 def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_month,
             save_as="activity_animation.gif", animate=True, reimbursement_duration=0,
             del_T_p_non_reimb=(0,0.), start_year=2023, closing_date=None):
