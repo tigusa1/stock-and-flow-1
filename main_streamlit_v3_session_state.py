@@ -118,7 +118,7 @@ def render_ui():
         layout="wide",
     )
 
-    st.title("Cash Flow Simulation Dashboard 9:37 am")
+    st.title("Cash Flow Simulation Dashboard (Dec 1 version)")
 
     col1, col2, col3 = st.columns([1, 1, 3])
     # -----------------------------------------------------------------
@@ -150,6 +150,10 @@ def render_ui():
     # PROJECTED NEW AWARDS + REIMBURSEMENT DELAYS
     # -----------------------------------------------------------------
     with col2:
+        # Clicking the button triggers a new simulation
+        if st.button("Run simulation"):
+            st.session_state["run_sim"] = True
+
         with st.expander("Projected New Awards", expanded=True):
             new_awards_pct = (
                 st.slider(
@@ -545,10 +549,6 @@ if "last_fig" not in st.session_state:
     st.session_state["last_fig"] = None
 if "last_png" not in st.session_state:
     st.session_state["last_png"] = None
-
-# Clicking the button triggers a new simulation
-if st.button("Run simulation"):
-    st.session_state["run_sim"] = True
 
 if st.session_state["run_sim"]:
     params_json = json.dumps(params, sort_keys=True, default=str)
