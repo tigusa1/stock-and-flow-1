@@ -412,12 +412,19 @@ def run_simulation_and_capture(params_json):
     # MAKE MAIN FIGURE
     # -----------------------------
     idc_cumloss = np.cumsum(np.array(idc_log[d:]) - np.array(idc_2_log[d:]))
-    fig, axs = plt.subplots(2, 2, figsize=(9, 8))
-    fig.tight_layout()
-    fig.subplots_adjust(hspace=0.4)
-    axs = axs.flatten()
     months = np.arange(len(cash_balance[d:])) / 52 * 12
 
+    # fig, axs = plt.subplots(2, 2, figsize=(9, 8), constrained_layout=True)
+    fig, axs = plt.subplots(2, 2, figsize=(9, 8))
+    axs = axs.flatten()
+
+    # Increase spacing between rows (and optionally columns)
+    fig.subplots_adjust(
+        # left=0.14,  # widen left margin for y-axis labels
+        # right=0.96,  # widen right side so labels don't overlap left plots
+        wspace=0.40-0.10,  # space between columns
+        hspace=0.35+0.10  # space between rows
+    )
     # Cash Balance
     axs[0].plot(
         months,
@@ -493,8 +500,10 @@ def run_simulation_and_capture(params_json):
         # ---- Add 5% headroom to ymax ----
         ymax = ymax * 1.1
 
-        if ymin == ymax == 0:
-            ax.set_ylim(-1000, 1000)  # 0 to 1 in your units
+        # print(f"ymin, ymax: {ymin}, {ymax}")
+
+        if abs(ymin) < 100000 and abs(ymax) < 100000:
+            ax.set_ylim(-100000, 100000)  # 0 to 1 in your units
         else:
             # ---- Apply new limits ----
             ax.set_ylim(ymin, ymax)
@@ -511,8 +520,13 @@ def run_simulation_and_capture(params_json):
     # -----------------------------
     # BREAKDOWN BY TYPE
     # -----------------------------
-    types = list(range(3))
+    types = list(range(3)) # [0, 1, 2]
     burns_types = np.zeros((len(types), T))
+    print(f"burns.shape = {burns.shape}")
+    print(f"burns_types.shape = {burns_types.shape}")
+    burns_type1 = burns[proj_types == 1].sum(axis=1)
+    print(f"burns_type1[:20] = {burns_type1[:20]}")
+
     for typ in types:
         burns_types[typ] = burns[proj_types == typ].sum(axis=0)
 
@@ -522,6 +536,7 @@ def run_simulation_and_capture(params_json):
     spend_types = np.array(
         [spend_by_project[proj_types == typ].sum(axis=0) for typ in types]
     )
+    print(f"reimbursement_types: {reimbursement_types}")
 
     time_marker = future_T_reimbursement_delay[0]
     Ts_simulation = np.arange(T)
@@ -543,10 +558,12 @@ def run_simulation_and_capture(params_json):
             #     closing_date=closing_date,
             # )
         else:
+            print(f"reimbursement_types: {reimbursement_types}")
+            # SWITCHED spend_types and reimbursement_types
             png_or_buf = make_project_activity_animation(
                 Ts_simulation,
-                reimbursement_types,
                 spend_types,
+                reimbursement_types,
                 T,
                 time_marker,
                 animate=False,

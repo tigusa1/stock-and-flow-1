@@ -70,6 +70,7 @@ def set_quarterly_ticks(T, start_year, ax):
 
 
 def burn_rate(burns, burns_BL, reimbursement_duration, save_Excel = True):
+    # print(f"burns: {burns}")
     burns = np.atleast_2d(burns) # shape = number of projects, time
     burns_BL = np.atleast_2d(burns_BL)
     burns = burns[:,reimbursement_duration:]
@@ -97,6 +98,8 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
       1. Gantt chart with horizontal color-intensity variation by burn rate
       2. Animated stacked-area plot of active projects.
     """
+    # print("making project activity animation ...")
+    # print(f"burns: {burns}")
 
     # ------------------------------------------------------------
     # Align inputs
@@ -105,7 +108,6 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
 
     Ts_simulation = np.asarray(Ts_simulation)
     decline_month = decline_month - reimbursement_duration
-    # print(f"burns: {burns}")
     if burns.shape[1] != len(Ts_simulation):
         T = burns.shape[1]
         Ts_simulation = np.arange(T)
@@ -216,7 +218,8 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
     # ax4.set_xlim(0, T*12/52)
     set_quarterly_ticks(T, start_year, ax4)
 
-    ax4.set_ylim(0, np.max(burns_BL.sum(axis=0)) * 1.05*52/12/1000)
+    # ax4.set_ylim(0, np.max(burns_BL.sum(axis=0)) * 1.05*52/12/1000)
+    ax4.set_ylim(0, np.max(burns.sum(axis=0)) * 1.05*52/12/1000)
     ax4.set_xlabel("Calendar Year Quarter")
     ax4.set_ylabel("$MM / month")
     ax4.set_title("Total Project Expenditure Run Rate")
@@ -236,6 +239,10 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
         final_labels = labels
         # final_labels = [labels[i] for i in final_order]
         print(f"final_order: {final_order}")
+
+    # print(f"burns.shape: {burns.shape}")
+    # print(f"burns[0,:]: {burns[0,:]}")
+    # print(f"burns[1,:]: {burns[1,:]}")
 
     final_colors = [colors[i] for i in final_order]
     ax4.stackplot(Ts_simulation * 12 / 52, *burns[final_order] * 52 / 12 / 1000, alpha=0.7 + 0.3, colors=final_colors,
