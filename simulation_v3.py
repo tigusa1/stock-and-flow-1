@@ -23,9 +23,9 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
 
     # Initialize projects including project status (reimbursable or not)
     #   and reimbursement duration
-    print("run_simulation() *************")
-    print(f"p_non_reimb: {p_non_reimb:.4f}, "
-          f"del_T_p_non_reimb: {del_T_p_non_reimb[0]:.0f}, {del_T_p_non_reimb[1]:.4f}")
+    # print("run_simulation() *************")
+    # print(f"p_non_reimb: {p_non_reimb:.4f}, "
+    #       f"del_T_p_non_reimb: {del_T_p_non_reimb[0]:.0f}, {del_T_p_non_reimb[1]:.4f}")
     # print(f"future_T_reimbursement_delay: "
     #       f"{future_T_reimbursement_delay[0]},  {future_T_reimbursement_delay[1]}")
     projects = []
@@ -77,11 +77,8 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
         else:
             prob_non_reimb = p_non_reimb + del_T_p_non_reimb[1]
 
-        # if i<10:
-        #     print(f"start: {start}, end: {end}, del_T_p_non_reimb[0]: {del_T_p_non_reimb[0]}")
         if random.random() < prob_non_reimb:
             proj_reimbursement_duration = -1 # overwrite
-            # print(f"Project {i+1} is non-reimbursable.")
         else:
             proj_reimbursement_duration = reimbursement_duration
 
@@ -93,7 +90,6 @@ def run_simulation(cash_init, p_non_reimb, n_projects_in, max_award, idc_rate,
         )
 
         if proj_reimbursement_duration == -1:
-            # print(f"i = {i}, proj_reimbursement_duration = -1")
             proj.type = 1
             proj.NOA_delay = 10**10
 

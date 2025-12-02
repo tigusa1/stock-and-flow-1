@@ -25,7 +25,7 @@ if st.button("Run simulation"):
     buf.seek(0)
 
     # Show plot
-    st.image(buf, use_container_width=True)
+    st.image(buf, width='stretch')
     plt.close(fig)
 
 st.write("Move the slider and click 'Run simulation' again. This must work every time.")

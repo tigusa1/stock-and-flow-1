@@ -57,7 +57,7 @@ def show_fig(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     buf.seek(0)
-    st.image(buf, use_container_width=True)
+    st.image(buf, width='stretch')
     plt.close(fig)
 
 
@@ -500,8 +500,6 @@ def run_simulation_and_capture(params_json):
         # ---- Add 5% headroom to ymax ----
         ymax = ymax * 1.1
 
-        # print(f"ymin, ymax: {ymin}, {ymax}")
-
         if abs(ymin) < 100000 and abs(ymax) < 100000:
             ax.set_ylim(-100000, 100000)  # 0 to 1 in your units
         else:
@@ -522,10 +520,6 @@ def run_simulation_and_capture(params_json):
     # -----------------------------
     types = list(range(3)) # [0, 1, 2]
     burns_types = np.zeros((len(types), T))
-    print(f"burns.shape = {burns.shape}")
-    print(f"burns_types.shape = {burns_types.shape}")
-    burns_type1 = burns[proj_types == 1].sum(axis=1)
-    print(f"burns_type1[:20] = {burns_type1[:20]}")
 
     for typ in types:
         burns_types[typ] = burns[proj_types == typ].sum(axis=0)
@@ -536,7 +530,6 @@ def run_simulation_and_capture(params_json):
     spend_types = np.array(
         [spend_by_project[proj_types == typ].sum(axis=0) for typ in types]
     )
-    print(f"reimbursement_types: {reimbursement_types}")
 
     time_marker = future_T_reimbursement_delay[0]
     Ts_simulation = np.arange(T)
@@ -558,7 +551,6 @@ def run_simulation_and_capture(params_json):
             #     closing_date=closing_date,
             # )
         else:
-            print(f"reimbursement_types: {reimbursement_types}")
             # SWITCHED spend_types and reimbursement_types
             png_or_buf = make_project_activity_animation(
                 Ts_simulation,
@@ -620,13 +612,13 @@ if st.session_state.get("last_fig") is not None:
     if col3 is not None:
         with col3:
             buf = io.BytesIO(st.session_state["last_fig"])
-            st.image(buf, use_container_width=True)
-            # st.image(st.session_state["last_fig"], use_container_width=True)
+            st.image(buf, width='stretch')
+            # st.image(st.session_state["last_fig"], width='stretch')
 
 if st.session_state.get("last_png") is not None:
     if col3 is not None:
         with col3:
             buf2 = io.BytesIO(st.session_state["last_png"])
-            st.image(buf2, use_container_width=True)
-            # st.image(st.session_state["last_png"], use_container_width=True)
+            st.image(buf2, width='stretch')
+            # st.image(st.session_state["last_png"], width='stretch')
 

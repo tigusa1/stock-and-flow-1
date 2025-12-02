@@ -70,7 +70,6 @@ def set_quarterly_ticks(T, start_year, ax):
 
 
 def burn_rate(burns, burns_BL, reimbursement_duration, save_Excel = True):
-    # print(f"burns: {burns}")
     burns = np.atleast_2d(burns) # shape = number of projects, time
     burns_BL = np.atleast_2d(burns_BL)
     burns = burns[:,reimbursement_duration:]
@@ -98,8 +97,6 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
       1. Gantt chart with horizontal color-intensity variation by burn rate
       2. Animated stacked-area plot of active projects.
     """
-    # print("making project activity animation ...")
-    # print(f"burns: {burns}")
 
     # ------------------------------------------------------------
     # Align inputs
@@ -239,10 +236,6 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
         final_labels = labels
         # final_labels = [labels[i] for i in final_order]
         print(f"final_order: {final_order}")
-
-    # print(f"burns.shape: {burns.shape}")
-    # print(f"burns[0,:]: {burns[0,:]}")
-    # print(f"burns[1,:]: {burns[1,:]}")
 
     final_colors = [colors[i] for i in final_order]
     ax4.stackplot(Ts_simulation * 12 / 52, *burns[final_order] * 52 / 12 / 1000, alpha=0.7 + 0.3, colors=final_colors,
