@@ -217,9 +217,9 @@ def make_project_activity_animation(Ts_simulation, burns, burns_BL, T, decline_m
     set_quarterly_ticks(T, start_year, ax4)
 
     ax4.set_ylim(0, np.max(burns_BL.sum(axis=0)) * 1.05*52/12/1000)
-    ax4.set_xlabel("Quarter")
-    ax4.set_ylabel("Spend rate ($MM/month)")
-    ax4.set_title("Spending rate of all projects")
+    ax4.set_xlabel("Calendar Year Quarter")
+    ax4.set_ylabel("$MM / month")
+    ax4.set_title("Total Project Expenditure Run Rate")
     ax3.set_title("Spending of active and past awards")
 
     # active_idx_final = np.argsort(start_idx)

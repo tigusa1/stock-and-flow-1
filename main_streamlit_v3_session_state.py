@@ -87,19 +87,13 @@ def render_ui():
 
     seed = 3  # currently unused
 
-    # Flag: plot individual projects (slow)
-    plot_individual_projects = st.toggle(
-        "Plot individual projects (requires several minutes)", 
-        on_change=reset_simulation
-    )
-
     # === DEFAULTS ===
     n_projects_yr_0 = 3400
     cash_init_0 = 4100
     max_award_0 = 1.0
     n_months_0 = 24
-    reimbursement_duration_0 = 2
-    future_reimbursement_duration_0 = 2
+    reimbursement_duration_0 = 1
+    future_reimbursement_duration_0 = 1
     T1_reimbursement_duration_0 = 6.0
     p_non_reimb_0 = 0.0
     del_p_non_reimb_0 = 0.0
@@ -118,12 +112,29 @@ def render_ui():
         layout="wide",
     )
 
-    st.title("Cash Flow Simulation Dashboard (Dec 1 version)")
+    # st.title("Cash Flow Simulation (Dec 2, 3:11 pm version)")
+    st.markdown("""
+    <h2>Cash Flow Simulation <span style='font-size: 18px; color: #666;'>
+    (Dec 2, 3:11 pm version)</span></h2>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1, 3])
     # -----------------------------------------------------------------
     # BASIC SETTINGS
     # -----------------------------------------------------------------
+    with col1:
+        # Flag: plot individual projects (slow)
+        plot_individual_projects = st.toggle(
+            "Plot individual projects (requires several minutes)",
+            on_change=reset_simulation
+        )
+
+    with col2:
+        # Clicking the button triggers a new simulation
+        if st.button("Run Simulation", help="This will only run if parameters have changed."):
+            st.session_state["run_sim"] = True
+        st.write("")  # or st.markdown("&nbsp;")
+
     with col1:
         with st.expander("Basic Settings", expanded=True):
             cash_init = st.slider(
@@ -150,10 +161,6 @@ def render_ui():
     # PROJECTED NEW AWARDS + REIMBURSEMENT DELAYS
     # -----------------------------------------------------------------
     with col2:
-        # Clicking the button triggers a new simulation
-        if st.button("Run simulation"):
-            st.session_state["run_sim"] = True
-
         with st.expander("Projected New Awards", expanded=True):
             new_awards_pct = (
                 st.slider(
@@ -406,6 +413,8 @@ def run_simulation_and_capture(params_json):
     # -----------------------------
     idc_cumloss = np.cumsum(np.array(idc_log[d:]) - np.array(idc_2_log[d:]))
     fig, axs = plt.subplots(2, 2, figsize=(9, 8))
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.4)
     axs = axs.flatten()
     months = np.arange(len(cash_balance[d:])) / 52 * 12
 
@@ -416,7 +425,8 @@ def run_simulation_and_capture(params_json):
         label="Cash Balance",
         linewidth=2,
     )
-    axs[0].set_title("Cash Balance")
+    axs[0].set_title("Cash Balance Over Time")
+    axs[0].set_ylabel("$MM")
 
     # Expenditures & Revenue
     axs[2].plot(
@@ -431,7 +441,8 @@ def run_simulation_and_capture(params_json):
         label="Expenditures",
         linewidth=2,
     )
-    axs[2].set_title("Expenditures & Revenue")
+    axs[2].set_title("Monthly Expenditures & Reimbursements")
+    axs[2].set_ylabel("$MM / month")
 
     # IDC monthly
     axs[3].plot(
@@ -446,7 +457,8 @@ def run_simulation_and_capture(params_json):
         label=f"IDC revised",
         linewidth=2,
     )
-    axs[3].set_title("IDC (monthly)")
+    axs[3].set_title("Monthly IDC Revenue")
+    axs[3].set_ylabel("$MM / month")
 
     # Cumulative IDC loss
     axs[1].plot(
@@ -455,16 +467,37 @@ def run_simulation_and_capture(params_json):
         label="Cumulative IDC loss",
         linewidth=2,
     )
-    axs[1].set_title("Cumulative loss of IDC")
+    axs[1].set_title("Cumulative IDC loss")
+    axs[1].set_ylabel("$MM")
 
     # Format axes
-    for ax in axs:
+
+    for i, ax in enumerate(axs):
         set_quarterly_ticks(T, start_year, ax)
-        ax.set_xlabel("Quarter")
+        # ax.set_xlabel("Quarter")
         ax.yaxis.set_major_formatter(FuncFormatter(thousands))
-        if len(ax.get_lines()) > 1:
+
+        handles, labels = ax.get_legend_handles_labels()
+        if len(labels) > 1:
             ax.legend()
+
         ax.grid(True)
+
+        # ---- Compute ymin, ymax from current data ----
+        ymin, ymax = ax.get_ylim()
+
+        # ---- Set lower limit to 0 for most plots ----
+        if i != 1:  # replace with the index you want to skip
+            ymin = 0
+
+        # ---- Add 5% headroom to ymax ----
+        ymax = ymax * 1.1
+
+        if ymin == ymax == 0:
+            ax.set_ylim(-1000, 1000)  # 0 to 1 in your units
+        else:
+            # ---- Apply new limits ----
+            ax.set_ylim(ymin, ymax)
 
     # Display figure
     # if col3 is not None:
@@ -540,6 +573,7 @@ def run_simulation_and_capture(params_json):
 # ---------------------------------------------------------------------
 # Build UI and get parameters
 # Initialize session flag to control simulation execution
+banner = st.empty()
 params = render_ui()
 col3 = params["col3"]
 
@@ -551,12 +585,18 @@ if "last_png" not in st.session_state:
     st.session_state["last_png"] = None
 
 if st.session_state["run_sim"]:
+    # --- Stable banner at the top ---
+    banner.markdown("#### Running simulation...")
+
     params_json = json.dumps(params, sort_keys=True, default=str)
 
     fig_bytes, png_bytes = run_simulation_and_capture(params_json)
     st.session_state["last_fig"] = fig_bytes
     st.session_state["last_png"] = png_bytes
     st.session_state["run_sim"] = False
+
+    # --- Update banner after completion ---
+    banner.empty()
 
 # Always display the most recent results (if any)
 if st.session_state.get("last_fig") is not None:
