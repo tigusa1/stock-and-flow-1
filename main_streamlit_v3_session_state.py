@@ -115,7 +115,7 @@ def render_ui():
     # st.title("Cash Flow Simulation (Dec 2, 3:11 pm version)")
     st.markdown("""
     <h2>Cash Flow Simulation <span style='font-size: 18px; color: #666;'>
-    (Dec 2, 3:11 pm version)</span></h2>
+    (Dec 2, 4:20 pm version)</span></h2>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1, 3])
