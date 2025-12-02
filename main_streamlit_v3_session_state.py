@@ -506,9 +506,9 @@ def run_simulation_and_capture(params_json):
                 time_marker,
                 animate=False,
                 reimbursement_duration=d,
-                start_year=start_year,
-                closing_date=closing_date,
-            )
+                start_year=start_year,)
+            #     closing_date=closing_date,
+            # )
         else:
             png_or_buf = make_project_activity_animation(
                 Ts_simulation,
